@@ -747,11 +747,13 @@
                 <td class="latency-text">${lt}</td>
                 <td class="cache-cell" id="cache-cell-${item.id}">${cacheHtml}</td>
                 <td style="font-size:13px;color:#64748b;">${item.cacheSize || '-'}</td>
-                <td class="action-group">
+                <td>
+                    <div class="action-group">
                     ${playHtml}
                     <a href="/detail/${item.id}" class="btn-action view"><i class="bi bi-eye"></i><span class="label-text">查看</span></a>
                     <button class="btn-action check" onclick="recheckOne(${item.id})"><i class="bi bi-arrow-repeat"></i><span class="label-text">检测</span></button>
                     <button class="btn-action del" onclick="deleteOne(${item.id})"><i class="bi bi-trash3"></i><span class="label-text">删除</span></button>
+                    </div>
                 </td>
                 <td>${item.sourceUrl ? '<a class="url-link" href="' + escapeHtml(item.sourceUrl) + '" target="_blank" title="' + escapeHtml(item.sourceUrl) + '">' + escapeHtml(src) + '</a>' : '<span class="url-text">-</span>'}</td>
                 <td class="time-text">${ct}</td>
