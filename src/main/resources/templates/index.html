@@ -158,7 +158,7 @@
         .table-card tbody tr { transition: background 0.15s; }
         .table-card tbody tr:hover { background: rgba(59,130,246,0.04); }
 
-        .url-text {
+        .url-text, .url-link {
             max-width: 260px;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -167,6 +167,14 @@
             vertical-align: middle;
             color: #94a3b8;
             font-size: 13px;
+        }
+        .url-link {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        .url-link:hover {
+            text-decoration: underline;
+            color: #2563eb;
         }
         .latency-text { font-family: 'JetBrains Mono', monospace; color: #3b82f6; font-weight: 500; }
         .time-text { font-size: 13px; color: #94a3b8; }
@@ -733,7 +741,7 @@
                     <button class="btn-action check" onclick="recheckOne(${item.id})"><i class="bi bi-arrow-repeat"></i>检测</button>
                     <button class="btn-action del" onclick="deleteOne(${item.id})"><i class="bi bi-trash3"></i></button>
                 </td>
-                <td><span class="url-text" title="${escapeHtml(item.sourceUrl || '')}">${escapeHtml(src)}</span></td>
+                <td>${item.sourceUrl ? '<a class="url-link" href="' + escapeHtml(item.sourceUrl) + '" target="_blank" title="' + escapeHtml(item.sourceUrl) + '">' + escapeHtml(src) + '</a>' : '<span class="url-text">-</span>'}</td>
                 <td class="time-text">${ct}</td>
             </tr>`;
         }).join('');
