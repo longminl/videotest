@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -148,6 +149,7 @@ public class VideoChecker {
             Request request = new Request.Builder()
                     .url(url)
                     .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                    .header("Referer", extractOrigin(url))
                     .build();
             try (Response response = sniffClient.newCall(request).execute()) {
                 if (response.code() != 200) return false;
@@ -164,6 +166,18 @@ public class VideoChecker {
         } catch (Exception e) {
             log.warn("内容嗅探失败: {}", url, e);
             return false;
+        }
+    }
+
+    /**
+     * 提取 URL 的源站（用于 Referer）
+     */
+    private String extractOrigin(String url) {
+        try {
+            URL u = new URL(url);
+            return u.getProtocol() + "://" + u.getHost();
+        } catch (Exception e) {
+            return url;
         }
     }
 }
