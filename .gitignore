@@ -9,7 +9,7 @@ hls-cache/
 target/
 
 # yt-dlp 可执行文件（需手动下载）
-yt-dlp.exe
+
 video-collect-1.0.0.jar
 # 运行时日志
 *.log
