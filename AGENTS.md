@@ -79,11 +79,15 @@ videotest/
 2. **前端移动端性能优化** — 移动端检测（UA + 宽度），缓存按钮 fire-and-forget 无轮询，CSS 禁用 backdrop-filter/shimer/过渡动画，touch-action:manipulation。
 3. **表格列重排** — # / 标题 / 状态 / 延迟 / 缓存 / 操作 / 来源 / 收录时间；sticky 操作列仅限移动端(≤768px)；修复 400px 断点隐藏错列 bug。
 4. **蓝白色调配色改造** — index.html 和 detail.html 均由暗黑主题改为蓝白主题（`#f0f5ff` 背景，`#ffffff` 卡片，`#3b82f6` 主色）；Plyr 播放器保持暗色；更新所有 inline 颜色、JS 图标颜色、Toast 样式、滤镜圆点颜色。
+5. **修复蓝白迁移中误删的 HTML 结构** — 恢复表格 loadingRow 骨架屏、分页组件、进度弹窗（之前被合并到 table 内部导致页面结构损坏→网络错误）。
+6. **删除视频同步清除本地缓存** — HlsCacheService.clearVideoCache() 删除 `{cache-dir}/{title}/`（含 ts + m3u8 子目录）+ 清除 tsUrlListCache 内存条目；VideoController.delete() 在删 DB 前调用。
 
 ### 阻塞
 - yt-dlp.exe 下载受限（GitHub 国内慢，SourceForge 文件截断），需用户自行获取。
 
 ### 关键文件
 - `HlsProxyController.java` — maxRequestsPerHost=20 + /api/cache/retry
+- `HlsCacheService.java` — +clearVideoCache(title)
+- `VideoController.java` — delete() 注入 HlsCacheService，删除时清缓存
 - `index.html` — 蓝白色调 + 列重排 + sticky 操作列 + 移动端跳过轮询 + 20s 自动重试
 - `detail.html` — 蓝白色调 + 移动端跳过缓存轮询 + 修复 downloadVideo 语法错误

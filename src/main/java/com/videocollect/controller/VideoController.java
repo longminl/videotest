@@ -8,6 +8,9 @@ import com.videocollect.service.HlsCacheService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -91,6 +94,25 @@ public class VideoController {
         hlsCacheService.clearVideoCache(record.getTitle());
         videoRecordDao.deleteById(id);
         return ApiResult.success("删除成功");
+    }
+
+    /**
+     * 批量删除记录
+     */
+    @DeleteMapping("/api/delete-batch")
+    @ResponseBody
+    public ApiResult<?> deleteBatch(@RequestBody Map<String, List<Long>> body) {
+        List<Long> ids = body.get("ids");
+        if (ids == null || ids.isEmpty()) {
+            return ApiResult.error("请选择要删除的记录");
+        }
+        // 先查所有记录，逐条清缓存
+        List<VideoRecord> records = videoRecordDao.findByIds(ids);
+        for (VideoRecord r : records) {
+            hlsCacheService.clearVideoCache(r.getTitle());
+        }
+        int count = videoRecordDao.deleteBatch(ids);
+        return ApiResult.success("批量删除成功，共 " + count + " 条");
     }
 
     /**

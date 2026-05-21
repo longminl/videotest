@@ -18,6 +18,9 @@ public interface VideoRecordDao {
     /** 根据ID查询 */
     VideoRecord findById(@Param("id") Long id);
 
+    /** 根据ID批量查询 */
+    List<VideoRecord> findByIds(@Param("ids") List<Long> ids);
+
     /** 根据来源URL查询（用于去重检测） */
     VideoRecord findBySourceUrl(@Param("sourceUrl") String sourceUrl);
 
@@ -45,8 +48,11 @@ public interface VideoRecordDao {
     int updateIsCached(@Param("id") Long id,
                        @Param("isCached") Boolean isCached);
 
-    /** 删除记录 */
+    /** 删除单条记录 */
     int deleteById(@Param("id") Long id);
+
+    /** 批量删除记录 */
+    int deleteBatch(@Param("ids") List<Long> ids);
 
     /** 查询所有需要检测的记录（status=0或2） */
     List<VideoRecord> findNeedCheck();

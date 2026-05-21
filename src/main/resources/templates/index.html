@@ -135,6 +135,9 @@
             box-shadow: 0 2px 12px rgba(0,0,0,0.04);
         }
         .table-card table { margin-bottom: 0; }
+        .table-card td:first-child, .table-card th:first-child {
+            width: 36px; text-align: center; vertical-align: middle;
+        }
         .table-card thead th {
             background: #f8fafc;
             border-bottom: 1px solid #e2e8f0;
@@ -323,17 +326,17 @@
             .pagination-custom { flex-direction: column; gap: 8px; align-items: center; }
             .page-info { font-size: 12px; }
             /* 操作列悬浮跟随滚动 */
-            .table-card thead th:nth-child(6),
-            .table-card tbody td:nth-child(6) {
+            .table-card thead th:nth-child(7),
+            .table-card tbody td:nth-child(7) {
                 position: sticky;
                 right: 0;
                 z-index: 1;
                 background: #ffffff;
             }
-            .table-card tbody td:nth-child(6) {
+            .table-card tbody td:nth-child(7) {
                 box-shadow: -4px 0 12px rgba(0,0,0,0.08);
             }
-            .table-card tbody tr:hover td:nth-child(6) {
+            .table-card tbody tr:hover td:nth-child(7) {
                 background: rgba(59,130,246,0.04);
             }
         }
@@ -350,8 +353,8 @@
             .table-card { border-radius: 10px; }
             .table-card thead th { font-size: 11px; padding: 8px 6px; }
             .table-card tbody td { padding: 8px 6px; font-size: 12px; }
-            .table-card thead th:nth-child(7),
-            .table-card tbody td:nth-child(7) { display: none; }  /* 隐藏来源列 */
+            .table-card thead th:nth-child(8),
+            .table-card tbody td:nth-child(8) { display: none; }  /* 隐藏来源列 */
             .latency-text { font-size: 12px; }
             .cache-cell { font-size: 11px; }
             .cache-bar-mini .track { width: 36px; }
@@ -378,8 +381,8 @@
             .filter-pill { font-size: 11px; padding: 5px 8px; }
             .table-card thead th,
             .table-card tbody td { padding: 6px 4px; font-size: 11px; }
-            .table-card thead th:nth-child(8),
-            .table-card tbody td:nth-child(8) { display: none; }  /* 隐藏收录时间列 */
+            .table-card thead th:nth-child(9),
+            .table-card tbody td:nth-child(9) { display: none; }  /* 隐藏收录时间列 */
             .status-pill { font-size: 10px; padding: 2px 6px; }
             .btn-action { padding: 3px 5px; font-size: 9px; }
         }
@@ -533,6 +536,9 @@
                th:href="@{/(status=3, keyword=${param.keyword})}"><span class="dot" style="background:#ca8a04"></span>解析失败</a>
         </div>
         <div class="search-group">
+            <button id="batchDeleteBtn" class="btn-action del" onclick="batchDelete()" style="display:none;">
+                <i class="bi bi-trash3"></i>批量删除
+            </button>
             <button id="checkAllBtn" class="btn-recheck" onclick="recheckAll()">
                 <i class="bi bi-arrow-repeat"></i>批量检测
             </button>
@@ -547,6 +553,7 @@
         <table class="table">
             <thead>
                 <tr>
+                    <th style="width:36px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="cursor:pointer;"></th>
                     <th style="width:48px">#</th>
                     <th>标题</th>
                     <th style="width:100px">状态</th>
@@ -559,7 +566,7 @@
             </thead>
             <tbody id="tableBody">
                 <tr id="loadingRow">
-                    <td colspan="8" class="text-center py-5" style="color:#94a3b8">
+                    <td colspan="9" class="text-center py-5" style="color:#94a3b8">
                         <div class="skeleton" style="height:20px;width:60%;margin:0 auto"></div>
                     </td>
                 </tr>
@@ -653,7 +660,7 @@
         if (currentKeyword) params.set('keyword', currentKeyword);
 
         const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center" style="color:#94a3b8"><div class="skeleton" style="height:20px;width:60%;margin:0 auto"></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="py-5 text-center" style="color:#94a3b8"><div class="skeleton" style="height:20px;width:60%;margin:0 auto"></div></td></tr>';
 
         fetch('/api/list?' + params.toString())
             .then(r => r.json())
@@ -662,18 +669,18 @@
                     renderTable(res.data.list);
                     renderPagination(res.data);
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center" style="color:#dc2626">加载失败</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="py-5 text-center" style="color:#dc2626">加载失败</td></tr>';
                 }
             })
             .catch(() => {
-                tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center" style="color:#dc2626">网络错误</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="py-5 text-center" style="color:#dc2626">网络错误</td></tr>';
             });
     }
 
     function renderTable(list) {
         const tbody = document.getElementById('tableBody');
         if (!list || list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8">
+            tbody.innerHTML = `<tr><td colspan="9">
                 <div class="empty-state">
                     <i class="bi bi-camera-video-off"></i>
                     <p>还没有收藏视频，快去收集吧</p>
@@ -714,6 +721,7 @@
                 playHtml = '<button class="btn-action play" onclick="playVideo(' + item.id + ')"><i class="bi bi-play-fill"></i>播放</button>';
             }
             return `<tr>
+                <td><input type="checkbox" class="row-checkbox" value="${item.id}" onchange="updateBatchDeleteBtn()" style="cursor:pointer;"></td>
                 <td style="color:#94a3b8;font-size:13px;">${item.id}</td>
                 <td title="${escapeHtml(item.title || '')}">${escapeHtml(ttl)}</td>
                 <td><span class="status-pill ${sc}"><span class="sd"></span>${st}</span></td>
@@ -797,6 +805,38 @@
         fetch('/api/delete/' + id, {method:'DELETE'})
             .then(r => r.json()).then(res => { showToast(res.message||'删除成功', res.code===200?'success':'danger'); loadData(currentPage); })
             .catch(() => showToast('删除失败','danger'));
+    }
+
+    // ===== 批量删除 =====
+
+    function toggleSelectAll(master) {
+        document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = master.checked);
+        updateBatchDeleteBtn();
+    }
+
+    function updateBatchDeleteBtn() {
+        var checked = document.querySelectorAll('.row-checkbox:checked').length;
+        var btn = document.getElementById('batchDeleteBtn');
+        btn.style.display = checked > 0 ? 'inline-flex' : 'none';
+        btn.innerHTML = '<i class="bi bi-trash3"></i>删除所选 (' + checked + ')';
+    }
+
+    function batchDelete() {
+        var checked = document.querySelectorAll('.row-checkbox:checked');
+        if (checked.length === 0) return;
+        if (!confirm('确定批量删除 ' + checked.length + ' 条记录？（本地缓存将一同清除）')) return;
+        var ids = Array.from(checked).map(cb => parseInt(cb.value));
+        fetch('/api/delete-batch', {
+            method:'DELETE',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ids})
+        })
+            .then(r => r.json()).then(res => {
+                showToast(res.message || '删除成功', res.code===200?'success':'danger');
+                document.getElementById('selectAll').checked = false;
+                loadData(currentPage);
+            })
+            .catch(() => showToast('批量删除失败','danger'));
     }
 
     function search() {
