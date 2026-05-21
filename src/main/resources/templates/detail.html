@@ -12,20 +12,20 @@
     <style>
         * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
         body {
-            background: #0f1117;
-            color: #e1e4ea;
+            background: #f0f5ff;
+            color: #1e293b;
             min-height: 100vh;
         }
         .app-container { max-width: 860px; margin: 0 auto; padding: 24px 20px; }
 
-        /* Plyr 暗色主题覆盖 */
+        /* Plyr 暗色主题覆盖（保持暗色） */
         :root {
-            --plyr-color-main: #6c8cff;
+            --plyr-color-main: #3b82f6;
             --plyr-video-background: #0a0c14;
             --plyr-video-control-background-hover: rgba(255,255,255,0.08);
             --plyr-video-control-color: #e1e4ea;
             --plyr-video-control-color-hover: #fff;
-            --plyr-range-thumb-background: #6c8cff;
+            --plyr-range-thumb-background: #3b82f6;
             --plyr-range-track-background: rgba(255,255,255,0.15);
             --plyr-menu-background: rgba(20,22,40,0.96);
             --plyr-menu-color: #c8cdd8;
@@ -38,9 +38,9 @@
         }
         .plyr { border-radius: 0; }
         .plyr video { aspect-ratio: 16 / 9; }
-        .plyr__control--overlaid { background: rgba(108,140,255,0.9) !important; }
-        .plyr__control--overlaid:hover { background: #6c8cff !important; }
-        .plyr__menu__container .plyr__control[role="menuitemradio"][aria-checked="true"]::before { background: #6c8cff; }
+        .plyr__control--overlaid { background: rgba(59,130,246,0.9) !important; }
+        .plyr__control--overlaid:hover { background: #3b82f6 !important; }
+        .plyr__menu__container .plyr__control[role="menuitemradio"][aria-checked="true"]::before { background: #3b82f6; }
         .plyr--video .plyr__progress__buffer { background: rgba(255,255,255,0.12); }
 
         /* 返回按钮 */
@@ -48,29 +48,29 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.06);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 10px;
             padding: 10px 18px;
-            color: #7a7f96;
+            color: #64748b;
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
             transition: all 0.2s;
             margin-bottom: 20px;
         }
-        .btn-back:hover { background: rgba(255,255,255,0.08); color: #e1e4ea; border-color: rgba(255,255,255,0.1); }
+        .btn-back:hover { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; }
 
         /* 标题 */
         .detail-title {
             font-size: 22px;
             font-weight: 700;
-            color: #f0f3f9;
+            color: #1e293b;
             margin-bottom: 20px;
             letter-spacing: -0.3px;
         }
 
-        /* 视频播放器卡片 */
+        /* 视频播放器卡片（保持暗色） */
         .player-card {
             background: #0a0c14;
             border: 1px solid rgba(255,255,255,0.06);
@@ -85,24 +85,24 @@
             align-items: center;
             justify-content: center;
             padding: 64px 20px;
-            color: #5a5f78;
+            color: #94a3b8;
         }
         .player-placeholder i { font-size: 48px; margin-bottom: 16px; }
         .player-placeholder p { font-size: 15px; margin: 0; }
 
         /* 信息卡片 */
         .info-card {
-            background: #16182a;
-            border: 1px solid rgba(255,255,255,0.06);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 14px;
             padding: 24px 28px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
         }
         .info-card-title {
             font-size: 14px;
             font-weight: 600;
-            color: #7a7f96;
+            color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 20px;
@@ -119,17 +119,17 @@
         .info-label {
             font-size: 12px;
             font-weight: 600;
-            color: #5a5f78;
+            color: #94a3b8;
             text-transform: uppercase;
             letter-spacing: 0.3px;
             margin-bottom: 4px;
         }
         .info-value {
             font-size: 14px;
-            color: #c8cdd8;
+            color: #475569;
             word-break: break-all;
         }
-        .info-value a { color: #6c8cff; text-decoration: none; }
+        .info-value a { color: #3b82f6; text-decoration: none; }
         .info-value a:hover { text-decoration: underline; }
         .info-full { grid-column: 1 / -1; }
 
@@ -144,18 +144,18 @@
             font-weight: 600;
         }
         .status-badge-lg .sd { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-        .sb-0 { background: rgba(160,167,191,0.12); color: #a0a7bf; }
-        .sb-0 .sd { background: #a0a7bf; }
-        .sb-1 { background: rgba(52,211,153,0.12); color: #34d399; }
-        .sb-1 .sd { background: #34d399; }
-        .sb-2 { background: rgba(248,113,113,0.12); color: #f87171; }
-        .sb-2 .sd { background: #f87171; }
-        .sb-3 { background: rgba(251,191,36,0.12); color: #fbbf24; }
-        .sb-3 .sd { background: #fbbf24; }
+        .sb-0 { background: rgba(148,163,184,0.12); color: #64748b; }
+        .sb-0 .sd { background: #64748b; }
+        .sb-1 { background: rgba(34,197,94,0.1); color: #16a34a; }
+        .sb-1 .sd { background: #16a34a; }
+        .sb-2 { background: rgba(239,68,68,0.1); color: #dc2626; }
+        .sb-2 .sd { background: #dc2626; }
+        .sb-3 { background: rgba(234,179,8,0.12); color: #ca8a04; }
+        .sb-3 .sd { background: #ca8a04; }
 
         .latency-value {
             font-family: 'JetBrains Mono', monospace;
-            color: #6c8cff;
+            color: #3b82f6;
             font-weight: 600;
         }
 
@@ -164,18 +164,18 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            background: rgba(108,140,255,0.08);
-            border: 1px solid rgba(108,140,255,0.15);
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.15);
             border-radius: 8px;
             padding: 4px 10px;
             font-size: 12px;
-            color: #6c8cff;
+            color: #3b82f6;
             cursor: pointer;
             transition: all 0.2s;
             margin-left: 8px;
         }
-        .btn-copy:hover { background: rgba(108,140,255,0.15); border-color: rgba(108,140,255,0.25); }
-        .btn-copy.copied { background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.25); color: #34d399; }
+        .btn-copy:hover { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.25); }
+        .btn-copy.copied { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.2); color: #16a34a; }
 
         /* 缓存进度条 */
         .cache-bar-wrap {
@@ -187,47 +187,47 @@
         .cache-bar {
             flex: 1;
             height: 4px;
-            background: rgba(255,255,255,0.06);
+            background: #e2e8f0;
             border-radius: 4px;
             overflow: hidden;
             max-width: 160px;
         }
         .cache-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #6c8cff, #34d399);
+            background: linear-gradient(90deg, #3b82f6, #22c55e);
             border-radius: 4px;
             transition: width 0.5s ease;
         }
         .cache-label {
             font-size: 12px;
-            color: #7a7f96;
+            color: #64748b;
             white-space: nowrap;
         }
-        .cache-label .num { color: #c8cdd8; font-weight: 600; }
+        .cache-label .num { color: #1e293b; font-weight: 600; }
 
         /* 备注输入 */
         .remark-input {
-            background: rgba(255,255,255,0.04) !important;
-            border: 1px solid rgba(255,255,255,0.08) !important;
+            background: #ffffff !important;
+            border: 1px solid #d1d5db !important;
             border-radius: 10px !important;
             padding: 10px 14px !important;
-            color: #e1e4ea !important;
+            color: #374151 !important;
             font-size: 14px !important;
             transition: all 0.2s;
         }
-        .remark-input:focus { border-color: #6c8cff !important; box-shadow: 0 0 0 3px rgba(108,140,255,0.12) !important; }
+        .remark-input:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important; }
 
         .btn-save-remark {
-            background: rgba(108,140,255,0.08);
-            border: 1px solid rgba(108,140,255,0.15);
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.15);
             border-radius: 10px;
             padding: 10px 16px;
-            color: #6c8cff;
+            color: #3b82f6;
             font-size: 13px;
             font-weight: 500;
             transition: all 0.2s;
         }
-        .btn-save-remark:hover { background: rgba(108,140,255,0.15); color: #8ba4ff; }
+        .btn-save-remark:hover { background: rgba(59,130,246,0.15); color: #2563eb; }
 
         /* 操作按钮组 */
         .action-bar {
@@ -248,29 +248,30 @@
         }
         .btn-action-primary:disabled { opacity: 0.6; }
         .btn-recheck {
-            background: rgba(251,191,36,0.12);
-            color: #fbbf24;
+            background: rgba(234,179,8,0.1);
+            color: #ca8a04;
         }
-        .btn-recheck:hover:not(:disabled) { background: rgba(251,191,36,0.2); }
+        .btn-recheck:hover:not(:disabled) { background: rgba(234,179,8,0.18); }
         .btn-delete {
-            background: rgba(248,113,113,0.12);
-            color: #f87171;
+            background: rgba(239,68,68,0.1);
+            color: #dc2626;
         }
-        .btn-delete:hover { background: rgba(248,113,113,0.2); }
+        .btn-delete:hover { background: rgba(239,68,68,0.18); }
         .btn-download {
-            background: rgba(52,211,153,0.12);
-            color: #34d399;
+            background: rgba(34,197,94,0.1);
+            color: #16a34a;
         }
-        .btn-download:hover { background: rgba(52,211,153,0.2); }
+        .btn-download:hover { background: rgba(34,197,94,0.18); }
 
-        /* 返回顶部样式 */
+        /* Toast */
         .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; }
         .toast-custom {
             border-radius: 12px;
             padding: 12px 18px;
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-            backdrop-filter: blur(12px);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            background: #ffffff !important;
+            color: #1e293b !important;
             font-size: 14px;
         }
         .toast-custom .toast-body { display: flex; align-items: center; gap: 8px; padding: 0; }
@@ -323,8 +324,8 @@
     <a href="/" class="btn-back"><i class="bi bi-arrow-left"></i>返回列表</a>
 
     <div th:if="${record == null}" style="text-align:center;padding:60px 0;">
-        <i class="bi bi-exclamation-triangle" style="font-size:40px;color:#f87171;display:block;margin-bottom:12px;"></i>
-        <p style="color:#7a7f96;">记录不存在或已被删除</p>
+        <i class="bi bi-exclamation-triangle" style="font-size:40px;color:#dc2626;display:block;margin-bottom:12px;"></i>
+        <p style="color:#94a3b8;">记录不存在或已被删除</p>
     </div>
 
     <div th:if="${record != null}">
@@ -365,7 +366,7 @@
                         <span class="btn-copy" id="copyBtn" onclick="copyUrl()"><i class="bi bi-files"></i>复制</span>
                     </div>
                     <div class="info-value" style="display:flex;align-items:center;gap:4px;">
-                        <span style="color:#6c8cff;font-size:13px;" th:text="${record.videoUrl.length() > 60 ? record.videoUrl.substring(0,60) + '...' : record.videoUrl}">-</span>
+                        <span style="color:#3b82f6;font-size:13px;" th:text="${record.videoUrl.length() > 60 ? record.videoUrl.substring(0,60) + '...' : record.videoUrl}">-</span>
                     </div>
                 </div>
                 <div class="info-item">
@@ -383,11 +384,11 @@
                 </div>
                 <div class="info-item">
                     <div class="info-label">收录时间</div>
-                    <div class="info-value" style="color:#7a7f96;font-size:13px;" th:text="${record.createdAt}">-</div>
+                    <div class="info-value" style="color:#94a3b8;font-size:13px;" th:text="${record.createdAt}">-</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">最后更新</div>
-                    <div class="info-value" style="color:#7a7f96;font-size:13px;" th:text="${record.updatedAt}">-</div>
+                    <div class="info-value" style="color:#94a3b8;font-size:13px;" th:text="${record.updatedAt}">-</div>
                 </div>
                 <div class="info-item info-full">
                     <div class="info-label">备注</div>
@@ -508,7 +509,7 @@
         if (!videoUrl || videoUrl.indexOf('.m3u8') < 0) return;
         document.getElementById('cacheStatusRow').style.display = '';
         if (isMobile) {
-            document.getElementById('cacheStatusValue').innerHTML = '<span style="color:#7a7f96;font-size:13px;">手机端跳过</span>';
+            document.getElementById('cacheStatusValue').innerHTML = '<span style="color:#94a3b8;font-size:13px;">手机端跳过</span>';
             return;
         }
         var title = encodeURIComponent('[[${record.title}]]');
@@ -526,7 +527,7 @@
                 var pct = Math.round(data.cached / data.total * 100);
                 var mb = (data.cachedBytes / 1048576).toFixed(1);
                 if (data.cached === data.total) {
-                    val.innerHTML = '<div class="cache-bar-wrap"><span style="color:#34d399;"><i class="bi bi-check-circle-fill"></i> 已全部缓存</span><span class="cache-label">' + mb + ' MB</span></div>';
+                    val.innerHTML = '<div class="cache-bar-wrap"><span style="color:#16a34a;"><i class="bi bi-check-circle-fill"></i> 已全部缓存</span><span class="cache-label">' + mb + ' MB</span></div>';
                     clearInterval(window._cacheTimer);
                 } else {
                     val.innerHTML = '<div class="cache-bar-wrap"><div class="cache-bar"><div class="cache-bar-fill" style="width:' + pct + '%;"></div></div><span class="cache-label"><span class="num">' + data.cached + '/' + data.total + '</span> ' + mb + ' MB</span></div>';
@@ -617,11 +618,11 @@
 
     function showToast(message, type) {
         const icons = { success:'bi-check-circle-fill', danger:'bi-x-circle-fill', warning:'bi-exclamation-circle-fill', info:'bi-info-circle-fill' };
-        const colors = { success:'#34d399', danger:'#f87171', warning:'#fbbf24', info:'#6c8cff' };
-        const c = colors[type] || '#6c8cff';
+        const colors = { success:'#16a34a', danger:'#dc2626', warning:'#ca8a04', info:'#3b82f6' };
+        const c = colors[type] || '#3b82f6';
         const ic = icons[type] || 'bi-info-circle-fill';
         const id = 't-' + Date.now();
-        const html = `<div id="${id}" class="toast toast-custom align-items-center border-0" role="alert" style="background:rgba(26,29,46,0.96);color:#e1e4ea;">
+        const html = `<div id="${id}" class="toast toast-custom align-items-center border-0" role="alert">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi ${ic}" style="color:${c};font-size:18px;"></i>
                 <div class="toast-body" style="padding:0;">${message}</div>

@@ -12,52 +12,53 @@
     <style>
         * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
         body {
-            background: #0f1117;
-            color: #e1e4ea;
+            background: #f0f5ff;
+            color: #1e293b;
             min-height: 100vh;
         }
         .app-container { max-width: 1320px; margin: 0 auto; padding: 24px 20px; }
 
-        /* 顶栏渐变 */
+        /* 顶栏 */
         .header-section {
-            background: linear-gradient(135deg, #1a1d2e 0%, #16182a 50%, #1e2035 100%);
-            border: 1px solid rgba(255,255,255,0.06);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-top: 3px solid #3b82f6;
             border-radius: 16px;
             padding: 28px 32px;
             margin-bottom: 24px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
         }
         .header-title {
             font-size: 22px;
             font-weight: 700;
-            color: #f0f3f9;
+            color: #1e293b;
             letter-spacing: -0.3px;
         }
-        .header-title i { color: #6c8cff; margin-right: 10px; }
+        .header-title i { color: #3b82f6; margin-right: 10px; }
         .header-sub {
             font-size: 13px;
-            color: #7a7f96;
+            color: #64748b;
             margin-top: 2px;
         }
 
         /* 输入框区域 */
         .input-glass {
-            background: rgba(255,255,255,0.04) !important;
-            border: 1px solid rgba(255,255,255,0.08) !important;
-            color: #e1e4ea !important;
+            background: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            color: #374151 !important;
             border-radius: 12px !important;
             padding: 14px 18px !important;
             font-size: 15px !important;
             transition: all 0.25s;
         }
         .input-glass:focus {
-            background: rgba(255,255,255,0.07) !important;
-            border-color: #6c8cff !important;
-            box-shadow: 0 0 0 3px rgba(108,140,255,0.12) !important;
+            background: #ffffff !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
         }
-        .input-glass::placeholder { color: #5a5f78; }
+        .input-glass::placeholder { color: #94a3b8; }
         .btn-collect {
-            background: linear-gradient(135deg, #6c8cff, #5b7cf0);
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             border: none;
             border-radius: 12px;
             font-weight: 600;
@@ -66,7 +67,7 @@
             transition: all 0.25s;
             color: #fff;
         }
-        .btn-collect:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,140,255,0.3); }
+        .btn-collect:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(59,130,246,0.3); }
         .btn-collect:disabled { opacity: 0.6; transform: none; }
 
         /* 筛选栏 */
@@ -81,7 +82,7 @@
         .filter-pills {
             display: flex;
             gap: 4px;
-            background: rgba(255,255,255,0.04);
+            background: #f1f5f9;
             padding: 4px;
             border-radius: 10px;
         }
@@ -90,16 +91,16 @@
             border-radius: 8px;
             font-size: 13px;
             font-weight: 500;
-            color: #7a7f96;
+            color: #64748b;
             text-decoration: none;
             transition: all 0.2s;
             white-space: nowrap;
         }
-        .filter-pill:hover { color: #c8cdd8; background: rgba(255,255,255,0.06); }
+        .filter-pill:hover { color: #1e293b; background: rgba(255,255,255,0.8); }
         .filter-pill.active {
-            color: #fff;
-            background: rgba(108,140,255,0.2);
-            box-shadow: 0 2px 8px rgba(108,140,255,0.15);
+            color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.15);
         }
         .filter-pill .dot {
             display: inline-block;
@@ -113,31 +114,31 @@
             align-items: center;
         }
         .search-input {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: #ffffff;
+            border: 1px solid #d1d5db;
             border-radius: 10px;
             padding: 9px 14px;
-            color: #e1e4ea;
+            color: #374151;
             font-size: 13px;
             width: 200px;
             transition: all 0.2s;
         }
-        .search-input:focus { outline: none; border-color: #6c8cff; background: rgba(255,255,255,0.07); }
-        .search-input::placeholder { color: #5a5f78; }
+        .search-input:focus { outline: none; border-color: #3b82f6; background: #ffffff; }
+        .search-input::placeholder { color: #94a3b8; }
 
         /* 表格卡片 */
         .table-card {
-            background: #16182a;
-            border: 1px solid rgba(255,255,255,0.06);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
         }
         .table-card table { margin-bottom: 0; }
         .table-card thead th {
-            background: rgba(255,255,255,0.03);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            color: #7a7f96;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            color: #64748b;
             font-weight: 600;
             font-size: 12px;
             text-transform: uppercase;
@@ -145,14 +146,14 @@
             padding: 14px 16px;
         }
         .table-card tbody td {
-            border-color: rgba(255,255,255,0.04);
-            color: #c8cdd8;
+            border-color: #f1f5f9;
+            color: #475569;
             padding: 14px 16px;
             vertical-align: middle;
             font-size: 14px;
         }
         .table-card tbody tr { transition: background 0.15s; }
-        .table-card tbody tr:hover { background: rgba(108,140,255,0.04); }
+        .table-card tbody tr:hover { background: rgba(59,130,246,0.04); }
 
         .url-text {
             max-width: 260px;
@@ -161,11 +162,11 @@
             white-space: nowrap;
             display: inline-block;
             vertical-align: middle;
-            color: #7a7f96;
+            color: #94a3b8;
             font-size: 13px;
         }
-        .latency-text { font-family: 'JetBrains Mono', monospace; color: #6c8cff; font-weight: 500; }
-        .time-text { font-size: 13px; color: #6a6f85; }
+        .latency-text { font-family: 'JetBrains Mono', monospace; color: #3b82f6; font-weight: 500; }
+        .time-text { font-size: 13px; color: #94a3b8; }
 
         /* 状态徽章 */
         .status-pill {
@@ -178,34 +179,34 @@
             font-weight: 600;
         }
         .status-pill .sd { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-        .status-0 { background: rgba(160,167,191,0.12); color: #a0a7bf; }
-        .status-0 .sd { background: #a0a7bf; }
-        .status-1 { background: rgba(52,211,153,0.12); color: #34d399; }
-        .status-1 .sd { background: #34d399; }
-        .status-2 { background: rgba(248,113,113,0.12); color: #f87171; }
-        .status-2 .sd { background: #f87171; }
-        .status-3 { background: rgba(251,191,36,0.12); color: #fbbf24; }
-        .status-3 .sd { background: #fbbf24; }
+        .status-0 { background: rgba(148,163,184,0.12); color: #64748b; }
+        .status-0 .sd { background: #64748b; }
+        .status-1 { background: rgba(34,197,94,0.1); color: #16a34a; }
+        .status-1 .sd { background: #16a34a; }
+        .status-2 { background: rgba(239,68,68,0.1); color: #dc2626; }
+        .status-2 .sd { background: #dc2626; }
+        .status-3 { background: rgba(234,179,8,0.12); color: #ca8a04; }
+        .status-3 .sd { background: #ca8a04; }
 
         /* 操作按钮 */
         .action-group { display: flex; gap: 4px; }
         .btn-action {
             background: transparent;
-            border: 1px solid rgba(255,255,255,0.06);
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 6px 10px;
             font-size: 12px;
-            color: #7a7f96;
+            color: #64748b;
             transition: all 0.2s;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 3px;
         }
-        .btn-action:hover { background: rgba(255,255,255,0.06); color: #e1e4ea; border-color: rgba(255,255,255,0.1); }
-        .btn-action.view:hover { background: rgba(108,140,255,0.12); color: #6c8cff; border-color: rgba(108,140,255,0.2); }
-        .btn-action.check:hover { background: rgba(251,191,36,0.12); color: #fbbf24; border-color: rgba(251,191,36,0.2); }
-        .btn-action.del:hover { background: rgba(248,113,113,0.12); color: #f87171; border-color: rgba(248,113,113,0.2); }
+        .btn-action:hover { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; }
+        .btn-action.view:hover { background: rgba(59,130,246,0.08); color: #3b82f6; border-color: rgba(59,130,246,0.2); }
+        .btn-action.check:hover { background: rgba(234,179,8,0.1); color: #ca8a04; border-color: rgba(234,179,8,0.2); }
+        .btn-action.del:hover { background: rgba(239,68,68,0.1); color: #dc2626; border-color: rgba(239,68,68,0.2); }
         .btn-action i { font-size: 13px; }
 
         /* 分页 */
@@ -216,20 +217,20 @@
             margin-top: 16px;
             padding: 0 4px;
         }
-        .page-info { font-size: 13px; color: #6a6f85; }
+        .page-info { font-size: 13px; color: #94a3b8; }
         .page-list { display: flex; gap: 2px; list-style: none; margin: 0; padding: 0; }
         .page-item-custom a {
             display: flex; align-items: center; justify-content: center;
             min-width: 34px; height: 34px;
             border-radius: 8px;
             font-size: 13px;
-            color: #7a7f96;
+            color: #64748b;
             text-decoration: none;
             transition: all 0.15s;
             cursor: pointer;
         }
-        .page-item-custom a:hover { background: rgba(255,255,255,0.06); color: #e1e4ea; }
-        .page-item-custom.active a { background: rgba(108,140,255,0.2); color: #6c8cff; font-weight: 600; }
+        .page-item-custom a:hover { background: #f1f5f9; color: #1e293b; }
+        .page-item-custom.active a { background: rgba(59,130,246,0.1); color: #3b82f6; font-weight: 600; }
         .page-item-custom.disabled a { opacity: 0.3; cursor: default; pointer-events: none; }
 
         /* Toast */
@@ -237,21 +238,22 @@
         .toast-custom {
             border-radius: 12px;
             padding: 12px 18px;
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-            backdrop-filter: blur(12px);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            background: #ffffff !important;
+            color: #1e293b !important;
             font-size: 14px;
         }
         .toast-custom .toast-body { display: flex; align-items: center; gap: 8px; }
 
         /* 空状态 */
         .empty-state { padding: 60px 20px; text-align: center; }
-        .empty-state i { font-size: 48px; color: #2a2d40; margin-bottom: 16px; }
-        .empty-state p { color: #5a5f78; font-size: 15px; }
+        .empty-state i { font-size: 48px; color: #cbd5e1; margin-bottom: 16px; }
+        .empty-state p { color: #94a3b8; font-size: 15px; }
 
         /* 加载骨架 */
         .skeleton {
-            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
             border-radius: 6px;
@@ -260,43 +262,43 @@
 
         /* 进度弹窗 */
         .modal-custom .modal-content {
-            background: #1a1d2e;
-            border: 1px solid rgba(255,255,255,0.08);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
-            color: #e1e4ea;
+            color: #1e293b;
         }
-        .modal-custom .modal-header { border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .modal-custom .modal-footer { border-top: 1px solid rgba(255,255,255,0.06); }
-        .modal-custom .btn-close { filter: invert(0.6); }
+        .modal-custom .modal-header { border-bottom: 1px solid #e2e8f0; }
+        .modal-custom .modal-footer { border-top: 1px solid #e2e8f0; }
+        .modal-custom .btn-close { filter: none; }
 
         /* 批量检测 */
         .btn-recheck {
-            background: rgba(108,140,255,0.08);
-            border: 1px solid rgba(108,140,255,0.15);
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.15);
             border-radius: 10px;
             padding: 9px 18px;
             font-size: 13px;
             font-weight: 500;
-            color: #6c8cff;
+            color: #3b82f6;
             transition: all 0.2s;
         }
         .btn-recheck:hover {
-            background: rgba(108,140,255,0.15);
-            color: #8ba4ff;
-            border-color: rgba(108,140,255,0.25);
+            background: rgba(59,130,246,0.15);
+            color: #2563eb;
+            border-color: rgba(59,130,246,0.25);
         }
         .btn-recheck i { margin-right: 4px; }
 
         .btn-search {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: #ffffff;
+            border: 1px solid #d1d5db;
             border-radius: 10px;
             padding: 9px 14px;
-            color: #7a7f96;
+            color: #64748b;
             font-size: 13px;
             transition: all 0.2s;
         }
-        .btn-search:hover { background: rgba(255,255,255,0.08); color: #e1e4ea; }
+        .btn-search:hover { background: #f8fafc; color: #1e293b; }
 
         /* ===== 响应式断点 ===== */
 
@@ -320,6 +322,20 @@
             /* 分页紧凑 */
             .pagination-custom { flex-direction: column; gap: 8px; align-items: center; }
             .page-info { font-size: 12px; }
+            /* 操作列悬浮跟随滚动 */
+            .table-card thead th:nth-child(6),
+            .table-card tbody td:nth-child(6) {
+                position: sticky;
+                right: 0;
+                z-index: 1;
+                background: #ffffff;
+            }
+            .table-card tbody td:nth-child(6) {
+                box-shadow: -4px 0 12px rgba(0,0,0,0.08);
+            }
+            .table-card tbody tr:hover td:nth-child(6) {
+                background: rgba(59,130,246,0.04);
+            }
         }
 
         /* 手机 */
@@ -334,8 +350,8 @@
             .table-card { border-radius: 10px; }
             .table-card thead th { font-size: 11px; padding: 8px 6px; }
             .table-card tbody td { padding: 8px 6px; font-size: 12px; }
-            .table-card thead th:nth-child(3),
-            .table-card tbody td:nth-child(3) { display: none; }  /* 隐藏来源列 */
+            .table-card thead th:nth-child(7),
+            .table-card tbody td:nth-child(7) { display: none; }  /* 隐藏来源列 */
             .latency-text { font-size: 12px; }
             .cache-cell { font-size: 11px; }
             .cache-bar-mini .track { width: 36px; }
@@ -362,8 +378,8 @@
             .filter-pill { font-size: 11px; padding: 5px 8px; }
             .table-card thead th,
             .table-card tbody td { padding: 6px 4px; font-size: 11px; }
-            .table-card thead th:nth-child(6),
-            .table-card tbody td:nth-child(6) { display: none; }  /* 隐藏收录时间列 */
+            .table-card thead th:nth-child(8),
+            .table-card tbody td:nth-child(8) { display: none; }  /* 隐藏收录时间列 */
             .status-pill { font-size: 10px; padding: 2px 6px; }
             .btn-action { padding: 3px 5px; font-size: 9px; }
         }
@@ -397,7 +413,7 @@
         }
         @media (max-width: 768px) {
             .toast-custom { backdrop-filter: none !important; }
-            .skeleton { animation: none !important; background: rgba(255,255,255,0.04) !important; }
+            .skeleton { animation: none !important; background: #e2e8f0 !important; }
             .btn-action, .btn-collect { transition: color 0.2s, background 0.2s; }
             .header-section { box-shadow: none; }
             .cache-bar-mini .fill { transition: none; }
@@ -413,27 +429,27 @@
         .cache-bar-mini .track {
             width: 50px;
             height: 4px;
-            background: rgba(255,255,255,0.08);
+            background: #e2e8f0;
             border-radius: 4px;
             overflow: hidden;
         }
         .cache-bar-mini .fill {
             height: 100%;
-            background: linear-gradient(90deg, #6c8cff, #34d399);
+            background: linear-gradient(90deg, #3b82f6, #22c55e);
             border-radius: 4px;
             transition: width 0.5s ease;
         }
         .cache-bar-mini .label {
             font-size: 11px;
-            color: #7a7f96;
+            color: #64748b;
             white-space: nowrap;
         }
-        .cache-bar-mini .label .num { color: #c8cdd8; font-weight: 600; }
+        .cache-bar-mini .label .num { color: #1e293b; font-weight: 600; }
 
         /* 播放按钮 */
-        .btn-action.play:hover { background: rgba(52,211,153,0.12); color: #34d399; border-color: rgba(52,211,153,0.2); }
+        .btn-action.play:hover { background: rgba(34,197,94,0.1); color: #16a34a; border-color: rgba(34,197,94,0.2); }
 
-        /* 播放模态框 */
+        /* 播放模态框（保持暗色，视频播放体验更好） */
         .modal-player .modal-content {
             background: #0a0c14;
             border: 1px solid rgba(255,255,255,0.06);
@@ -457,12 +473,12 @@
         .modal-player .modal-body { padding: 0; }
         .modal-player .plyr video { aspect-ratio: 16 / 9; display: block; }
         :root {
-            --plyr-color-main: #6c8cff;
+            --plyr-color-main: #3b82f6;
             --plyr-video-background: #0a0c14;
             --plyr-video-control-background-hover: rgba(255,255,255,0.08);
             --plyr-video-control-color: #e1e4ea;
             --plyr-video-control-color-hover: #fff;
-            --plyr-range-thumb-background: #6c8cff;
+            --plyr-range-thumb-background: #3b82f6;
             --plyr-range-track-background: rgba(255,255,255,0.15);
             --plyr-menu-background: rgba(20,22,40,0.96);
             --plyr-menu-color: #c8cdd8;
@@ -506,15 +522,15 @@
     <div class="filter-bar">
         <div class="filter-pills">
             <a class="filter-pill" th:classappend="${param.status == null ? 'active' : ''}"
-               th:href="@{/(keyword=${param.keyword})}"><span class="dot" style="background:#7a7f96"></span>全部</a>
+               th:href="@{/(keyword=${param.keyword})}"><span class="dot" style="background:#64748b"></span>全部</a>
             <a class="filter-pill" th:classappend="${param.status == '1' ? 'active' : ''}"
-               th:href="@{/(status=1, keyword=${param.keyword})}"><span class="dot" style="background:#34d399"></span>可播放</a>
+               th:href="@{/(status=1, keyword=${param.keyword})}"><span class="dot" style="background:#16a34a"></span>可播放</a>
             <a class="filter-pill" th:classappend="${param.status == '2' ? 'active' : ''}"
-               th:href="@{/(status=2, keyword=${param.keyword})}"><span class="dot" style="background:#f87171"></span>不可播放</a>
+               th:href="@{/(status=2, keyword=${param.keyword})}"><span class="dot" style="background:#dc2626"></span>不可播放</a>
             <a class="filter-pill" th:classappend="${param.status == '0' ? 'active' : ''}"
-               th:href="@{/(status=0, keyword=${param.keyword})}"><span class="dot" style="background:#a0a7bf"></span>未检测</a>
+               th:href="@{/(status=0, keyword=${param.keyword})}"><span class="dot" style="background:#94a3b8"></span>未检测</a>
             <a class="filter-pill" th:classappend="${param.status == '3' ? 'active' : ''}"
-               th:href="@{/(status=3, keyword=${param.keyword})}"><span class="dot" style="background:#fbbf24"></span>解析失败</a>
+               th:href="@{/(status=3, keyword=${param.keyword})}"><span class="dot" style="background:#ca8a04"></span>解析失败</a>
         </div>
         <div class="search-group">
             <button id="checkAllBtn" class="btn-recheck" onclick="recheckAll()">
@@ -533,47 +549,21 @@
                 <tr>
                     <th style="width:48px">#</th>
                     <th>标题</th>
-                    <th style="width:22%">来源</th>
                     <th style="width:100px">状态</th>
                     <th style="width:80px">延迟</th>
                     <th style="width:90px">缓存</th>
+                    <th style="width:150px">操作</th>
+                    <th style="width:22%">来源</th>
                     <th style="width:110px">收录时间</th>
-                    <th style="width:170px">操作</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
                 <tr id="loadingRow">
-                    <td colspan="8" class="text-center py-5" style="color:#5a5f78">
-                        <div class="skeleton" style="height:20px;width:60%;margin:0 auto"></div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                    <td colspan="8" class="text-center py-5" style="color:#94a3b8">
 
-    <!-- 分页 -->
-    <div class="pagination-custom">
-        <div class="page-info" id="pageInfo"></div>
-        <ul class="page-list" id="pagination"></ul>
-    </div>
-
-    <!-- 进度弹窗 -->
-    <div class="modal fade modal-custom" id="progressModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title"><i class="bi bi-arrow-repeat me-2"></i>批量检测</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="progress mb-3" style="height:8px;background:rgba(255,255,255,0.06);border-radius:99px;">
-                        <div id="progressBar" class="progress-bar" style="width:0%;background:linear-gradient(90deg,#6c8cff,#8ba4ff);border-radius:99px;"></div>
-                    </div>
-                    <p class="mb-1" id="progressText" style="font-size:14px;color:#c8cdd8;">准备中...</p>
-                    <p class="mb-0" id="progressDetail" style="font-size:12px;color:#6a6f85;"></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-sm" style="background:rgba(255,255,255,0.06);color:#7a7f96;border:none;border-radius:8px;" data-bs-dismiss="modal">后台运行</button>
+                    <p class="mb-1" id="progressText" style="font-size:14px;color:#475569;">准备中...</p>
+                    <p class="mb-0" id="progressDetail" style="font-size:12px;color:#94a3b8;"></p>
+                    <button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">后台运行</button>
                 </div>
             </div>
         </div>
@@ -592,7 +582,7 @@
                     <div id="playModalPlayerWrap">
                         <video id="playModalVideo" controls playsinline style="width:100%;display:block;"></video>
                     </div>
-                    <div id="playModalFallback" style="display:none;padding:60px 20px;text-align:center;color:#5a5f78;">
+                    <div id="playModalFallback" style="display:none;padding:60px 20px;text-align:center;color:#94a3b8;">
                         <i class="bi bi-exclamation-triangle" style="font-size:40px;display:block;margin-bottom:12px;"></i>
                         <p>播放器加载失败</p>
                     </div>
@@ -638,7 +628,7 @@
         if (currentKeyword) params.set('keyword', currentKeyword);
 
         const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center" style="color:#5a5f78"><div class="skeleton" style="height:20px;width:60%;margin:0 auto"></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center" style="color:#94a3b8"><div class="skeleton" style="height:20px;width:60%;margin:0 auto"></div></td></tr>';
 
         fetch('/api/list?' + params.toString())
             .then(r => r.json())
@@ -647,11 +637,11 @@
                     renderTable(res.data.list);
                     renderPagination(res.data);
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center" style="color:#f87171">加载失败</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center" style="color:#dc2626">加载失败</td></tr>';
                 }
             })
             .catch(() => {
-                tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center" style="color:#f87171">网络错误</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="py-5 text-center" style="color:#dc2626">网络错误</td></tr>';
             });
     }
 
@@ -681,13 +671,13 @@
             const isM3u8 = item.videoUrl && item.videoUrl.indexOf('.m3u8') > 0;
             var cacheHtml;
             if (!isM3u8) {
-                cacheHtml = '<span style="color:#5a5f78;font-size:12px;">—</span>';
+                cacheHtml = '<span style="color:#94a3b8;font-size:12px;">—</span>';
             } else if (item.isCached) {
-                cacheHtml = '<span style="color:#34d399;font-size:12px;"><i class="bi bi-check-circle-fill me-1"></i>已缓存</span>';
+                cacheHtml = '<span style="color:#16a34a;font-size:12px;"><i class="bi bi-check-circle-fill me-1"></i>已缓存</span>';
             } else if (cachePollTimers[item.id] && cacheProgress[item.id]) {
                 // 缓存进行中，显示"缓存中…"
                 cacheHtml = '<div class="cache-bar-mini" id="cache-display-' + item.id + '">' +
-                    '<span class="label" style="color:#fbbf24;"><i class="bi bi-hourglass-split"></i> 缓存中…</span></div>';
+                    '<span class="label" style="color:#ca8a04;"><i class="bi bi-hourglass-split"></i> 缓存中…</span></div>';
             } else {
                 cacheHtml = '<div class="cache-bar-mini" id="cache-display-' + item.id + '">' +
                     '<button class="btn-action view cache-btn" onclick="startCache(' + item.id + ')" id="cache-btn-' + item.id + '"><i class="bi bi-download"></i>缓存</button>' +
@@ -699,19 +689,19 @@
                 playHtml = '<button class="btn-action play" onclick="playVideo(' + item.id + ')"><i class="bi bi-play-fill"></i>播放</button>';
             }
             return `<tr>
-                <td style="color:#5a5f78;font-size:13px;">${item.id}</td>
+                <td style="color:#94a3b8;font-size:13px;">${item.id}</td>
                 <td title="${escapeHtml(item.title || '')}">${escapeHtml(ttl)}</td>
-                <td><span class="url-text" title="${escapeHtml(item.sourceUrl || '')}">${escapeHtml(src)}</span></td>
                 <td><span class="status-pill ${sc}"><span class="sd"></span>${st}</span></td>
                 <td class="latency-text">${lt}</td>
                 <td class="cache-cell" id="cache-cell-${item.id}">${cacheHtml}</td>
-                <td class="time-text">${ct}</td>
                 <td class="action-group">
                     ${playHtml}
                     <a href="/detail/${item.id}" class="btn-action view"><i class="bi bi-eye"></i>查看</a>
                     <button class="btn-action check" onclick="recheckOne(${item.id})"><i class="bi bi-arrow-repeat"></i>检测</button>
                     <button class="btn-action del" onclick="deleteOne(${item.id})"><i class="bi bi-trash3"></i></button>
                 </td>
+                <td><span class="url-text" title="${escapeHtml(item.sourceUrl || '')}">${escapeHtml(src)}</span></td>
+                <td class="time-text">${ct}</td>
             </tr>`;
         }).join('');
         // 对已开始缓存的项继续轮询
@@ -794,11 +784,11 @@
 
     function showToast(message, type) {
         const icons = { success:'bi-check-circle-fill', danger:'bi-x-circle-fill', warning:'bi-exclamation-circle-fill', info:'bi-info-circle-fill' };
-        const colors = { success:'#34d399', danger:'#f87171', warning:'#fbbf24', info:'#6c8cff' };
-        const c = colors[type] || '#6c8cff';
+        const colors = { success:'#16a34a', danger:'#dc2626', warning:'#ca8a04', info:'#3b82f6' };
+        const c = colors[type] || '#3b82f6';
         const ic = icons[type] || 'bi-info-circle-fill';
         const id = 't-' + Date.now();
-        const html = `<div id="${id}" class="toast toast-custom align-items-center border-0" role="alert" style="background:rgba(26,29,46,0.96);color:#e1e4ea;">
+        const html = `<div id="${id}" class="toast toast-custom align-items-center border-0" role="alert">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi ${ic}" style="color:${c};font-size:18px;"></i>
                 <div class="toast-body" style="padding:0;">${message}</div>
@@ -985,14 +975,14 @@
 
                 // 情况 1：缓存完成
                 if (data.finished || (data.total > 0 && data.cached === data.total)) {
-                    display.innerHTML = '<span style="color:#34d399;font-size:12px;"><i class="bi bi-check-circle-fill me-1"></i>已缓存</span>';
+                    display.innerHTML = '<span style="color:#16a34a;font-size:12px;"><i class="bi bi-check-circle-fill me-1"></i>已缓存</span>';
                     stopCachePoll(id);
                     return;
                 }
 
                 // 情况 2：total === 0（m3u8 未解析或正在拉取）
                 if (!data || data.total === 0) {
-                    display.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#fbbf24;"><i class="bi bi-hourglass-split"></i> 等待中…</span></div>';
+                    display.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#ca8a04;"><i class="bi bi-hourglass-split"></i> 等待中…</span></div>';
                     checkStall(id, data);
                     return;
                 }
@@ -1000,7 +990,7 @@
                 // 情况 3：total > 0，显示进度条
                 var pct = Math.round(data.cached / data.total * 100);
                 var mb = (data.cachedBytes / 1048576).toFixed(1);
-                display.innerHTML = '<div class="cache-bar-mini"><div class="track"><div class="fill" style="width:' + pct + '%;"></div></div><span class="label"><span class="num">' + data.cached + '/' + data.total + '</span> <span style="color:#6a6f85;font-size:11px;">' + mb + 'MB</span></span></div>';
+                display.innerHTML = '<div class="cache-bar-mini"><div class="track"><div class="fill" style="width:' + pct + '%;"></div></div><span class="label"><span class="num">' + data.cached + '/' + data.total + '</span> <span style="color:#94a3b8;font-size:11px;">' + mb + 'MB</span></span></div>';
 
                 // 进度有增长 → 重置停滞计时
                 if (data.cached > prog.lastCached) {
@@ -1035,7 +1025,7 @@
             var remaining = Math.ceil((20000 - elapsed) / 1000);
             var display = document.getElementById('cache-display-' + id);
             if (display) {
-                display.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#fbbf24;"><i class="bi bi-arrow-repeat"></i> ' + remaining + 's后重试…</span></div>';
+                display.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#ca8a04;"><i class="bi bi-arrow-repeat"></i> ' + remaining + 's后重试…</span></div>';
             }
         }
     }
@@ -1051,7 +1041,7 @@
         if (prog.retryCount >= 3) {
             var display = document.getElementById('cache-display-' + id);
             if (display) {
-                display.innerHTML = '<span style="color:#f87171;font-size:12px;"><i class="bi bi-exclamation-circle"></i> 缓存失败，请<a href="javascript:location.reload()" style="color:#6c8cff;">刷新</a></span>';
+                display.innerHTML = '<span style="color:#dc2626;font-size:12px;"><i class="bi bi-exclamation-circle"></i> 缓存失败，请<a href="javascript:location.reload()" style="color:#3b82f6;">刷新</a></span>';
             }
             stopCachePoll(id);
             return;
@@ -1062,7 +1052,7 @@
 
         var display = document.getElementById('cache-display-' + id);
         if (display) {
-            display.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#fbbf24;"><i class="bi bi-arrow-repeat"></i> 重试中…(' + prog.retryCount + '/3)</span></div>';
+            display.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#ca8a04;"><i class="bi bi-arrow-repeat"></i> 重试中…(' + prog.retryCount + '/3)</span></div>';
         }
 
         var url = '/api/cache/retry?videoUrl=' + encodeURIComponent(info.videoUrl)
@@ -1081,7 +1071,7 @@
                         prog.lastCached = data.cached;
                         prog.lastTotal = data.total;
                     } else {
-                        d.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#fbbf24;"><i class="bi bi-hourglass-split"></i> 等待中…</span></div>';
+                        d.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#ca8a04;"><i class="bi bi-hourglass-split"></i> 等待中…</span></div>';
                     }
                 }
             })
