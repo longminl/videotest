@@ -305,6 +305,17 @@
             .status-badge-lg { font-size: 12px; padding: 4px 10px; }
             .latency-value { font-size: 13px; }
         }
+
+        /* 移动端性能优化 */
+        .btn-action-primary, .btn-back, .btn-save-remark, .btn-recheck, .btn-delete, .btn-download {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        @media (max-width: 768px) {
+            .toast-custom { backdrop-filter: none !important; }
+            .btn-back { transition: color 0.2s, background 0.2s; }
+            .btn-action-primary { transition: color 0.2s, background 0.2s; }
+        }
     </style>
 </head>
 <body>
@@ -415,6 +426,7 @@
 <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 <script>
+    var isMobile = /Mobi|Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
     // Plyr + HLS 播放器初始化
     (function() {
         var videoUrl = '[[${record.videoUrl}]]';
@@ -495,6 +507,10 @@
         var videoUrl = '[[${record.videoUrl}]]';
         if (!videoUrl || videoUrl.indexOf('.m3u8') < 0) return;
         document.getElementById('cacheStatusRow').style.display = '';
+        if (isMobile) {
+            document.getElementById('cacheStatusValue').innerHTML = '<span style="color:#7a7f96;font-size:13px;">手机端跳过</span>';
+            return;
+        }
         var title = encodeURIComponent('[[${record.title}]]');
         updateCacheStatus(videoUrl, title);
         window._cacheTimer = setInterval(function() { updateCacheStatus(videoUrl, title); }, 3000);
@@ -597,8 +613,6 @@
             // mp4/ts 直链：新标签打开（浏览器直接播放/下载）
             window.open(videoUrl);
         }
-    }
-        showToast('正在下载...', 'info');
     }
 
     function showToast(message, type) {

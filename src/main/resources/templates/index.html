@@ -389,6 +389,20 @@
             .modal-player .plyr video { aspect-ratio: 16 / 9; }
         }
 
+        /* 移动端性能优化 */
+        .btn-action, .btn-collect, .filter-pill, .page-item-custom a,
+        .input-glass, .btn-search, .btn-recheck {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        @media (max-width: 768px) {
+            .toast-custom { backdrop-filter: none !important; }
+            .skeleton { animation: none !important; background: rgba(255,255,255,0.04) !important; }
+            .btn-action, .btn-collect { transition: color 0.2s, background 0.2s; }
+            .header-section { box-shadow: none; }
+            .cache-bar-mini .fill { transition: none; }
+        }
+
         /* 缓存列 */
         .cache-cell { font-size: 13px; }
         .cache-bar-mini {
@@ -600,6 +614,7 @@
     var videoMap = {};
     var cachePollTimers = {};
     var cacheProgress = {};
+    var isMobile = /Mobi|Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
     document.addEventListener('DOMContentLoaded', function () {
         const params = new URLSearchParams(window.location.search);
@@ -903,13 +918,21 @@
             .then(function(data) {
                 if (data.started) {
                     showToast('缓存已启动', 'success');
-                    // 按钮改为"缓存中…"静态文本
-                    if (btn) { btn.innerHTML = '<i class="bi bi-cloud-download"></i> 缓存中…'; }
-                    // 开始轮询
-                    if (!cachePollTimers[id]) {
-                        cachePollTimers[id] = setInterval(function() { pollCacheStatus(id); }, 5000);
+                    if (isMobile) {
+                        // 手机：toast 提示 + 短暂显示"已提交"后恢复按钮
+                        if (btn) { btn.innerHTML = '<i class="bi bi-check"></i> 已提交'; }
+                        setTimeout(function() {
+                            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-download"></i>缓存'; }
+                        }, 2000);
+                        delete cacheProgress[id];
+                    } else {
+                        // PC：显示缓存中 + 启动轮询
+                        if (btn) { btn.innerHTML = '<i class="bi bi-cloud-download"></i> 缓存中…'; }
+                        if (!cachePollTimers[id]) {
+                            cachePollTimers[id] = setInterval(function() { pollCacheStatus(id); }, 5000);
+                        }
+                        pollCacheStatus(id);
                     }
-                    pollCacheStatus(id);
                 } else {
                     showToast(data.error || '缓存启动失败', 'danger');
                     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-download"></i>缓存'; }
@@ -920,10 +943,10 @@
                 clearTimeout(timeoutId);
                 showToast('缓存请求超时或失败', 'warning');
                 // 即使超时也启动轮询，后台任务可能仍在执行
-                if (!cachePollTimers[id]) {
+                if (!isMobile && !cachePollTimers[id]) {
                     cachePollTimers[id] = setInterval(function() { pollCacheStatus(id); }, 5000);
                 }
-                pollCacheStatus(id);
+                if (!isMobile) { pollCacheStatus(id); }
                 if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-download"></i>缓存'; }
             });
     }
