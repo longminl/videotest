@@ -5,8 +5,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -20,6 +22,12 @@ import java.util.regex.Pattern;
 public class VideoParser {
 
     private static final Logger log = LoggerFactory.getLogger(VideoParser.class);
+
+    /** iframe 递归解析最大深度（1=只解析一层） */
+    private static final int MAX_IFRAME_DEPTH = 1;
+
+    @Autowired
+    private PageFetcher pageFetcher;
 
     /** 常见的视频文件扩展名 */
     private static final List<String> VIDEO_EXTENSIONS = new ArrayList<String>() {{
@@ -53,6 +61,10 @@ public class VideoParser {
      * @return 找到的视频URL列表
      */
     public List<String> parse(Document doc) {
+        return parse(doc, 0);
+    }
+
+    private List<String> parse(Document doc, int depth) {
         List<String> results = new ArrayList<>();
 
         // ====== 第0步：从 <script> 标签中提取 JS 变量里的视频地址 ======
@@ -100,7 +112,31 @@ public class VideoParser {
         Elements iframes = doc.select("iframe[src]");
         for (Element iframe : iframes) {
             String src = iframe.attr("src").trim();
-            if ((isValidVideoUrl(src) || isEmbedPlatform(src)) && !results.contains(src)) {
+            if (!isValidVideoUrl(src) || results.contains(src)) continue;
+
+            if (isVideoFileUrl(src) || isEmbedPlatform(src)) {
+                // 视频直链或已知平台 → 直接收录
+                results.add(src);
+            } else if (depth < MAX_IFRAME_DEPTH && pageFetcher != null) {
+                // 未知 iframe（PHP 播放页等）→ 递归抓取解析
+                log.info("iframe 指向非视频页面，递归解析: {}", src);
+                Document iframeDoc = pageFetcher.fetch(src);
+                if (iframeDoc != null) {
+                    List<String> nested = parse(iframeDoc, depth + 1);
+                    for (String url : nested) {
+                        if (!results.contains(url)) {
+                            results.add(url);
+                            log.debug("iframe 递归解析到视频: {}", url);
+                        }
+                    }
+                    if (nested.isEmpty()) {
+                        log.info("iframe 递归未找到视频，跳过: {}", src);
+                    }
+                } else {
+                    log.warn("iframe 页面抓取失败: {}", src);
+                }
+            } else {
+                // 超过递归深度或无 Fetcher → 保底收录
                 results.add(src);
             }
         }
@@ -168,6 +204,25 @@ public class VideoParser {
     public String extractPageTitle(Document doc) {
         String title = doc.title();
         return (title != null && !title.isEmpty()) ? title : null;
+    }
+
+    /**
+     * 判断 URL 是否指向直接的视频文件（通过路径扩展名判断，忽略查询参数）
+     */
+    private boolean isVideoFileUrl(String url) {
+        try {
+            String path = new URL(url).getPath().toLowerCase();
+            for (String ext : VIDEO_EXTENSIONS) {
+                if (path.endsWith(ext)) return true;
+            }
+        } catch (Exception e) {
+            // URL 格式异常，回退到简单匹配
+            String lower = url.toLowerCase();
+            for (String ext : VIDEO_EXTENSIONS) {
+                if (lower.contains(ext)) return true;
+            }
+        }
+        return false;
     }
 
     /**
