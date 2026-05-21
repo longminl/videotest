@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.videocollect.dao.VideoRecordDao">
+
+    <resultMap id="baseMap" type="VideoRecord">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="source_url" property="sourceUrl"/>
+        <result column="video_url" property="videoUrl"/>
+        <result column="status" property="status"/>
+        <result column="latency_ms" property="latencyMs"/>
+        <result column="page_title" property="pageTitle"/>
+        <result column="remark" property="remark"/>
+        <result column="is_cached" property="isCached"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, title, source_url, video_url, status, latency_ms,
+        page_title, remark, is_cached, created_at, updated_at
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO video_collection (title, source_url, video_url, status, latency_ms, page_title, remark)
+        VALUES (#{title}, #{sourceUrl}, #{videoUrl}, #{status}, #{latencyMs}, #{pageTitle}, #{remark})
+    </insert>
+
+    <select id="findById" resultMap="baseMap">
+        SELECT <include refid="baseColumns"/> FROM video_collection WHERE id = #{id}
+    </select>
+
+    <select id="findBySourceUrl" resultMap="baseMap">
+        SELECT <include refid="baseColumns"/> FROM video_collection WHERE source_url = #{sourceUrl} LIMIT 1
+    </select>
+
+    <select id="findPage" resultMap="baseMap">
+        SELECT <include refid="baseColumns"/> FROM video_collection
+        <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%')
+                OR page_title LIKE CONCAT('%', #{keyword}, '%')
+                OR source_url LIKE CONCAT('%', #{keyword}, '%')
+                OR video_url LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM video_collection
+        <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%')
+                OR page_title LIKE CONCAT('%', #{keyword}, '%')
+                OR source_url LIKE CONCAT('%', #{keyword}, '%')
+                OR video_url LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <update id="updateStatus">
+        UPDATE video_collection
+        SET status = #{status}, latency_ms = #{latencyMs}, remark = #{remark}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateRemark">
+        UPDATE video_collection SET remark = #{remark} WHERE id = #{id}
+    </update>
+
+    <update id="updateIsCached">
+        UPDATE video_collection SET is_cached = #{isCached} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM video_collection WHERE id = #{id}
+    </delete>
+
+    <select id="findNeedCheck" resultMap="baseMap">
+        SELECT <include refid="baseColumns"/> FROM video_collection
+        WHERE status IN (0, 2)
+        ORDER BY created_at DESC
+    </select>
+
+</mapper>

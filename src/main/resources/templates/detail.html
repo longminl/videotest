@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'详情 - ' + ${record?.title ?: '视频收藏'}">视频详情</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/hls.js/1.5.17/hls.min.js"></script>
+    <link href="https://cdn.plyr.io/3.7.8/plyr.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        body {
+            background: #0f1117;
+            color: #e1e4ea;
+            min-height: 100vh;
+        }
+        .app-container { max-width: 860px; margin: 0 auto; padding: 24px 20px; }
+
+        /* Plyr 暗色主题覆盖 */
+        :root {
+            --plyr-color-main: #6c8cff;
+            --plyr-video-background: #0a0c14;
+            --plyr-video-control-background-hover: rgba(255,255,255,0.08);
+            --plyr-video-control-color: #e1e4ea;
+            --plyr-video-control-color-hover: #fff;
+            --plyr-range-thumb-background: #6c8cff;
+            --plyr-range-track-background: rgba(255,255,255,0.15);
+            --plyr-menu-background: rgba(20,22,40,0.96);
+            --plyr-menu-color: #c8cdd8;
+            --plyr-menu-border-color: rgba(255,255,255,0.08);
+            --plyr-menu-arrow-color: #7a7f96;
+            --plyr-tooltip-background: rgba(20,22,40,0.96);
+            --plyr-tooltip-color: #c8cdd8;
+            --plyr-control-icon-size: 18px;
+            --plyr-control-spacing: 10px;
+        }
+        .plyr { border-radius: 0; }
+        .plyr video { aspect-ratio: 16 / 9; }
+        .plyr__control--overlaid { background: rgba(108,140,255,0.9) !important; }
+        .plyr__control--overlaid:hover { background: #6c8cff !important; }
+        .plyr__menu__container .plyr__control[role="menuitemradio"][aria-checked="true"]::before { background: #6c8cff; }
+        .plyr--video .plyr__progress__buffer { background: rgba(255,255,255,0.12); }
+
+        /* 返回按钮 */
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 10px 18px;
+            color: #7a7f96;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+        }
+        .btn-back:hover { background: rgba(255,255,255,0.08); color: #e1e4ea; border-color: rgba(255,255,255,0.1); }
+
+        /* 标题 */
+        .detail-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #f0f3f9;
+            margin-bottom: 20px;
+            letter-spacing: -0.3px;
+        }
+
+        /* 视频播放器卡片 */
+        .player-card {
+            background: #0a0c14;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .player-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 64px 20px;
+            color: #5a5f78;
+        }
+        .player-placeholder i { font-size: 48px; margin-bottom: 16px; }
+        .player-placeholder p { font-size: 15px; margin: 0; }
+
+        /* 信息卡片 */
+        .info-card {
+            background: #16182a;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+        }
+        .info-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #7a7f96;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 32px;
+        }
+        .info-item { }
+        .info-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #5a5f78;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
+        }
+        .info-value {
+            font-size: 14px;
+            color: #c8cdd8;
+            word-break: break-all;
+        }
+        .info-value a { color: #6c8cff; text-decoration: none; }
+        .info-value a:hover { text-decoration: underline; }
+        .info-full { grid-column: 1 / -1; }
+
+        /* 状态徽章 */
+        .status-badge-lg {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .status-badge-lg .sd { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .sb-0 { background: rgba(160,167,191,0.12); color: #a0a7bf; }
+        .sb-0 .sd { background: #a0a7bf; }
+        .sb-1 { background: rgba(52,211,153,0.12); color: #34d399; }
+        .sb-1 .sd { background: #34d399; }
+        .sb-2 { background: rgba(248,113,113,0.12); color: #f87171; }
+        .sb-2 .sd { background: #f87171; }
+        .sb-3 { background: rgba(251,191,36,0.12); color: #fbbf24; }
+        .sb-3 .sd { background: #fbbf24; }
+
+        .latency-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: #6c8cff;
+            font-weight: 600;
+        }
+
+        /* 复制按钮 */
+        .btn-copy {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(108,140,255,0.08);
+            border: 1px solid rgba(108,140,255,0.15);
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 12px;
+            color: #6c8cff;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+        .btn-copy:hover { background: rgba(108,140,255,0.15); border-color: rgba(108,140,255,0.25); }
+        .btn-copy.copied { background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.25); color: #34d399; }
+
+        /* 缓存进度条 */
+        .cache-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 2px;
+        }
+        .cache-bar {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 4px;
+            overflow: hidden;
+            max-width: 160px;
+        }
+        .cache-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6c8cff, #34d399);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .cache-label {
+            font-size: 12px;
+            color: #7a7f96;
+            white-space: nowrap;
+        }
+        .cache-label .num { color: #c8cdd8; font-weight: 600; }
+
+        /* 备注输入 */
+        .remark-input {
+            background: rgba(255,255,255,0.04) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 10px !important;
+            padding: 10px 14px !important;
+            color: #e1e4ea !important;
+            font-size: 14px !important;
+            transition: all 0.2s;
+        }
+        .remark-input:focus { border-color: #6c8cff !important; box-shadow: 0 0 0 3px rgba(108,140,255,0.12) !important; }
+
+        .btn-save-remark {
+            background: rgba(108,140,255,0.08);
+            border: 1px solid rgba(108,140,255,0.15);
+            border-radius: 10px;
+            padding: 10px 16px;
+            color: #6c8cff;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-save-remark:hover { background: rgba(108,140,255,0.15); color: #8ba4ff; }
+
+        /* 操作按钮组 */
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn-action-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 11px 22px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-action-primary:disabled { opacity: 0.6; }
+        .btn-recheck {
+            background: rgba(251,191,36,0.12);
+            color: #fbbf24;
+        }
+        .btn-recheck:hover:not(:disabled) { background: rgba(251,191,36,0.2); }
+        .btn-delete {
+            background: rgba(248,113,113,0.12);
+            color: #f87171;
+        }
+        .btn-delete:hover { background: rgba(248,113,113,0.2); }
+        .btn-download {
+            background: rgba(52,211,153,0.12);
+            color: #34d399;
+        }
+        .btn-download:hover { background: rgba(52,211,153,0.2); }
+
+        /* 返回顶部样式 */
+        .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; }
+        .toast-custom {
+            border-radius: 12px;
+            padding: 12px 18px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
+            font-size: 14px;
+        }
+        .toast-custom .toast-body { display: flex; align-items: center; gap: 8px; padding: 0; }
+
+        @media (max-width: 768px) {
+            .app-container { padding: 16px 12px; }
+            .detail-title { font-size: 20px; margin-bottom: 16px; }
+            .info-card { padding: 18px 18px; border-radius: 12px; }
+            .info-grid { gap: 12px 24px; }
+            .btn-back { padding: 8px 14px; font-size: 13px; }
+        }
+        @media (max-width: 640px) {
+            .info-grid { grid-template-columns: 1fr; }
+            .detail-title { font-size: 18px; }
+            .action-bar { flex-direction: column; }
+            .action-bar .btn-action-primary { width: 100%; justify-content: center; }
+            .btn-action-primary { padding: 10px 16px; font-size: 13px; }
+            .info-card-title { font-size: 13px; margin-bottom: 14px; }
+            .info-label { font-size: 11px; }
+            .info-value { font-size: 13px; }
+            .player-card { border-radius: 10px; }
+        }
+        @media (max-width: 400px) {
+            .app-container { padding: 10px 8px; }
+            .detail-title { font-size: 16px; }
+            .info-card { padding: 14px 12px; }
+            .info-grid { gap: 10px; }
+            .btn-back { padding: 6px 10px; font-size: 12px; border-radius: 8px; }
+            .btn-action-primary { padding: 9px 14px; font-size: 13px; }
+            .remark-input { padding: 8px 10px !important; font-size: 13px !important; }
+            .btn-save-remark { padding: 8px 12px; font-size: 12px; }
+            .status-badge-lg { font-size: 12px; padding: 4px 10px; }
+            .latency-value { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <a href="/" class="btn-back"><i class="bi bi-arrow-left"></i>返回列表</a>
+
+    <div th:if="${record == null}" style="text-align:center;padding:60px 0;">
+        <i class="bi bi-exclamation-triangle" style="font-size:40px;color:#f87171;display:block;margin-bottom:12px;"></i>
+        <p style="color:#7a7f96;">记录不存在或已被删除</p>
+    </div>
+
+    <div th:if="${record != null}">
+        <h1 class="detail-title" th:text="${record.title}">视频标题</h1>
+
+        <!-- 播放器 -->
+        <div class="player-card">
+            <div th:if="${record.status == 1}" id="playerWrapper">
+                <video id="videoPlayer" controls autoplay muted playsinline></video>
+            </div>
+            <div class="player-placeholder" th:if="${record.status != 1}">
+                <i class="bi" th:classappend="${record.status == 2} ? 'bi-x-circle' : (${record.status == 0} ? 'bi-clock' : 'bi-exclamation-triangle')"></i>
+                <p th:if="${record.status == 2}">该视频不可播放</p>
+                <p th:if="${record.status == 0}">尚未检测</p>
+                <p th:if="${record.status == 3}">解析失败</p>
+            </div>
+        </div>
+
+        <!-- 信息卡片 -->
+        <div class="info-card">
+            <div class="info-card-title"><i class="bi bi-info-circle"></i>详细信息</div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">标题</div>
+                    <div class="info-value" th:text="${record.title}">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">网页标题</div>
+                    <div class="info-value" th:text="${record.pageTitle ?: '-'}">-</div>
+                </div>
+                <div class="info-item info-full">
+                    <div class="info-label">来源网址</div>
+                    <div class="info-value"><a th:href="${record.sourceUrl}" target="_blank" th:text="${record.sourceUrl}">-</a></div>
+                </div>
+                <div class="info-item info-full">
+                    <div class="info-label">
+                        视频地址
+                        <span class="btn-copy" id="copyBtn" onclick="copyUrl()"><i class="bi bi-files"></i>复制</span>
+                    </div>
+                    <div class="info-value" style="display:flex;align-items:center;gap:4px;">
+                        <span style="color:#6c8cff;font-size:13px;" th:text="${record.videoUrl.length() > 60 ? record.videoUrl.substring(0,60) + '...' : record.videoUrl}">-</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">状态</div>
+                    <div class="info-value">
+                        <span th:if="${record.status == 0}" class="status-badge-lg sb-0"><span class="sd"></span>未检测</span>
+                        <span th:if="${record.status == 1}" class="status-badge-lg sb-1"><span class="sd"></span>可播放</span>
+                        <span th:if="${record.status == 2}" class="status-badge-lg sb-2"><span class="sd"></span>不可播放</span>
+                        <span th:if="${record.status == 3}" class="status-badge-lg sb-3"><span class="sd"></span>解析失败</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">延迟</div>
+                    <div class="info-value"><span class="latency-value" th:text="${record.latencyMs != null ? record.latencyMs + 'ms' : '-'}">-</span></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">收录时间</div>
+                    <div class="info-value" style="color:#7a7f96;font-size:13px;" th:text="${record.createdAt}">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">最后更新</div>
+                    <div class="info-value" style="color:#7a7f96;font-size:13px;" th:text="${record.updatedAt}">-</div>
+                </div>
+                <div class="info-item info-full">
+                    <div class="info-label">备注</div>
+                    <div class="info-value">
+                        <div class="input-group">
+                            <input type="text" id="remarkInput" class="form-control remark-input" th:value="${record.remark}">
+                            <button class="btn-save-remark" onclick="saveRemark(${record.id})">保存</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 缓存状态（仅 m3u8 显示） -->
+                <div class="info-item info-full" id="cacheStatusRow" style="display:none;">
+                    <div class="info-label">缓存状态</div>
+                    <div class="info-value" id="cacheStatusValue">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="action-bar">
+            <button class="btn-action-primary btn-download" onclick="downloadVideo(${record.id})">
+                <i class="bi bi-download"></i>下载
+            </button>
+            <button class="btn-action-primary btn-recheck" onclick="recheck(${record.id})">
+                <i class="bi bi-arrow-repeat"></i>重新检测
+            </button>
+            <button class="btn-action-primary btn-delete" onclick="deleteRecord(${record.id})">
+                <i class="bi bi-trash3"></i>删除记录
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+<script>
+    // Plyr + HLS 播放器初始化
+    (function() {
+        var videoUrl = '[[${record.videoUrl}]]';
+        var video = document.getElementById('videoPlayer');
+        if (!video || !videoUrl) return;
+
+        var plyrOptions = {
+            speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3, 4] },
+            controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
+            keyboard: { focused: true, global: true },
+            tooltips: { controls: true, seek: true },
+            resetOnEnd: true
+        };
+
+        // Plyr CDN 加载失败时，原生 controls 已保留作为回退
+        if (typeof Plyr === 'undefined') {
+            console.warn('Plyr 加载失败，使用原生播放器');
+            return;
+        }
+
+        // 视频标题（用于缓存分目录）
+        var videoTitle = encodeURIComponent('[[${record.title}]]');
+
+        // 判断是否为 m3u8 流
+        if (videoUrl.indexOf('.m3u8') > 0) {
+            var proxyUrl = '/proxy/m3u8?url=' + encodeURIComponent(videoUrl) + '&title=' + videoTitle;
+            if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+                // Chrome / Firefox → hls.js 解码后交给 Plyr
+                var hls = new Hls();
+                hls.loadSource(proxyUrl);
+                hls.attachMedia(video);
+
+                // 首次检测 hls 代理返回状态
+                var hlsReady = false;
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    hlsReady = true;
+                    // 微延迟确保 video metadata 已加载
+                    setTimeout(function() {
+                        window.player = new Plyr(video, plyrOptions);
+                    }, 100);
+                });
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    if (data.fatal) {
+                        console.error('HLS 播放失败:', data.type, data.details);
+                        // 显示错误提示
+                        var errMsg = '视频流加载失败 (' + data.type + ')';
+                        if (data.response) {
+                            errMsg += ' HTTP ' + data.response.code;
+                        }
+                        showToast(errMsg, 'danger');
+                        hls.destroy();
+                    }
+                });
+                // 超时回退：10 秒后 hls 仍未就绪，使用原生播放器
+                setTimeout(function() {
+                    if (!hlsReady) {
+                        console.warn('HLS 加载超时，使用原生播放器');
+                        hls.destroy();
+                        video.src = proxyUrl;  // 直接请求 m3u8 代理
+                    }
+                }, 10000);
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari 原生 HLS
+                video.src = proxyUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    window.player = new Plyr(video, plyrOptions);
+                }, { once: true });
+            }
+        } else {
+            // mp4 / webm 等直链 → 直接初始化 Plyr，无需等待加载完成
+            video.src = videoUrl;
+            window.player = new Plyr(video, plyrOptions);
+        }
+    })();
+
+    // ===== 缓存状态（仅 m3u8 视频） =====
+    (function() {
+        var videoUrl = '[[${record.videoUrl}]]';
+        if (!videoUrl || videoUrl.indexOf('.m3u8') < 0) return;
+        document.getElementById('cacheStatusRow').style.display = '';
+        var title = encodeURIComponent('[[${record.title}]]');
+        updateCacheStatus(videoUrl, title);
+        window._cacheTimer = setInterval(function() { updateCacheStatus(videoUrl, title); }, 3000);
+    })();
+
+    function updateCacheStatus(url, title) {
+        var val = document.getElementById('cacheStatusValue');
+        var apiUrl = '/api/cache/status?videoUrl=' + encodeURIComponent(url) + '&title=' + title;
+        fetch(apiUrl)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data || data.total === 0) return;
+                var pct = Math.round(data.cached / data.total * 100);
+                var mb = (data.cachedBytes / 1048576).toFixed(1);
+                if (data.cached === data.total) {
+                    val.innerHTML = '<div class="cache-bar-wrap"><span style="color:#34d399;"><i class="bi bi-check-circle-fill"></i> 已全部缓存</span><span class="cache-label">' + mb + ' MB</span></div>';
+                    clearInterval(window._cacheTimer);
+                } else {
+                    val.innerHTML = '<div class="cache-bar-wrap"><div class="cache-bar"><div class="cache-bar-fill" style="width:' + pct + '%;"></div></div><span class="cache-label"><span class="num">' + data.cached + '/' + data.total + '</span> ' + mb + ' MB</span></div>';
+                }
+            })
+            .catch(function() {});
+    }
+
+    function copyUrl() {
+        const url = '[[${record.videoUrl}]]';
+        const btn = document.getElementById('copyBtn');
+        navigator.clipboard.writeText(url).then(() => {
+            btn.classList.add('copied');
+            btn.innerHTML = '<i class="bi bi-check-lg"></i>已复制';
+            setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<i class="bi bi-files"></i>复制'; }, 2000);
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+            btn.classList.add('copied');
+            btn.innerHTML = '<i class="bi bi-check-lg"></i>已复制';
+            setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<i class="bi bi-files"></i>复制'; }, 2000);
+        });
+    }
+
+    function saveRemark(id) {
+        const remark = document.getElementById('remarkInput').value.trim();
+        fetch('/api/remark/' + id + '?remark=' + encodeURIComponent(remark), {method:'PUT'})
+            .then(r => r.json())
+            .then(res => showToast(res.message || '备注已保存', res.code === 200 ? 'success' : 'danger'))
+            .catch(() => showToast('保存失败', 'danger'));
+    }
+
+    function recheck(id) {
+        // 如果是 m3u8 视频，先清除缓存以强制重新拉取
+        var videoUrl = '[[${record.videoUrl}]]';
+        var title = encodeURIComponent('[[${record.title}]]');
+        if (videoUrl && videoUrl.indexOf('.m3u8') > 0) {
+            fetch('/api/cache/clear-m3u8?videoUrl=' + encodeURIComponent(videoUrl) + '&title=' + title);
+        }
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>检测中...';
+        fetch('/api/check/' + id, {method:'PUT'})
+            .then(r => r.json())
+            .then(res => {
+                showToast(res.message || '检测完成', res.code === 200 ? 'success' : 'warning');
+                setTimeout(() => location.reload(), 1000);
+            })
+            .catch(() => showToast('请求失败', 'danger'))
+            .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="bi bi-arrow-repeat"></i>重新检测'; });
+    }
+
+    function deleteRecord(id) {
+        if (!confirm('确定要删除该记录吗？')) return;
+        fetch('/api/delete/' + id, {method:'DELETE'})
+            .then(r => r.json())
+            .then(res => {
+                if (res.code === 200) { showToast('删除成功', 'success'); setTimeout(() => location.href = '/', 800); }
+                else { showToast(res.message || '删除失败', 'danger'); }
+            })
+            .catch(() => showToast('删除失败', 'danger'));
+    }
+
+    function downloadVideo(id) {
+        var videoUrl = '[[${record.videoUrl}]]';
+        var title = '[[${record.title}]]';
+        if (!videoUrl) { showToast('无视频地址', 'warning'); return; }
+        showToast('正在下载...', 'info');
+        // 触发后端缓存（仅 m3u8）
+        if (videoUrl.indexOf('.m3u8') > 0) {
+            var controller = new AbortController();
+            setTimeout(function() { controller.abort(); }, 5000);
+            fetch('/api/cache/start?videoUrl=' + encodeURIComponent(videoUrl)
+                + '&title=' + encodeURIComponent(title) + '&id=' + id,
+                {method:'POST', signal: controller.signal}).catch(function(){});
+            // 打开代理 m3u8（浏览器触发下载）
+            window.open('/proxy/m3u8?url=' + encodeURIComponent(videoUrl)
+                + '&title=' + encodeURIComponent(title));
+        } else {
+            // mp4/ts 直链：新标签打开（浏览器直接播放/下载）
+            window.open(videoUrl);
+        }
+    }
+        showToast('正在下载...', 'info');
+    }
+
+    function showToast(message, type) {
+        const icons = { success:'bi-check-circle-fill', danger:'bi-x-circle-fill', warning:'bi-exclamation-circle-fill', info:'bi-info-circle-fill' };
+        const colors = { success:'#34d399', danger:'#f87171', warning:'#fbbf24', info:'#6c8cff' };
+        const c = colors[type] || '#6c8cff';
+        const ic = icons[type] || 'bi-info-circle-fill';
+        const id = 't-' + Date.now();
+        const html = `<div id="${id}" class="toast toast-custom align-items-center border-0" role="alert" style="background:rgba(26,29,46,0.96);color:#e1e4ea;">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi ${ic}" style="color:${c};font-size:18px;"></i>
+                <div class="toast-body" style="padding:0;">${message}</div>
+                <button type="button" class="btn-close btn-close-white ms-2" style="font-size:12px;opacity:0.5;" data-bs-dismiss="toast"></button>
+            </div>
+        </div>`;
+        document.getElementById('toastContainer').insertAdjacentHTML('beforeend', html);
+        const el = document.getElementById(id);
+        new bootstrap.Toast(el, {delay:3000}).show();
+        el.addEventListener('hidden.bs.toast', () => el.remove());
+    }
+</script>
+</body>
+</html>

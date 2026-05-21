@@ -1,0 +1,40 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3307/video_collect?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  thymeleaf:
+    cache: false
+    suffix: .html
+    prefix: classpath:/templates/
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.videocollect.model
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 视频检测超时时间（毫秒）
+video:
+  check:
+    connect-timeout: 5000
+    read-timeout: 5000
+  fetch:
+    user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36
+    timeout: 8000
+
+  # yt-dlp 配置（用于解析 B站/YouTube 等 JS 渲染的视频）
+  ytdlp:
+    path: yt-dlp
+    timeout: 30
+
+  # HLS 代理缓存配置
+  hls:
+    cache-dir: ${user.dir}/hls-cache
+    prefetch-threads: 5           # 后台预下载 ts 的并发线程数
+    playback-prefetch-count: 10   # 播放时额外预取 ts 个数（边播边缓存后续 N 段）
