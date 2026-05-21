@@ -333,6 +333,7 @@
             .action-group { flex-wrap: wrap; gap: 2px; }
             .btn-action { padding: 5px 7px; font-size: 11px; border-radius: 6px; }
             .btn-action i { font-size: 11px; }
+            .btn-action .label-text { display: none; }  /* 手机端仅显示图标 */
             /* 分页紧凑 */
             .pagination-custom { flex-direction: column; gap: 8px; align-items: center; }
             .page-info { font-size: 12px; }
@@ -362,7 +363,7 @@
             .table-card thead th:nth-child(7),
             .table-card tbody td:nth-child(7) { width: 70px; min-width: 70px; }
             .table-card thead th:nth-child(8),
-            .table-card tbody td:nth-child(8) { width: 108px; min-width: 108px; }
+            .table-card tbody td:nth-child(8) { width: 60px; min-width: 60px; }
             .table-card thead th:nth-child(10),
             .table-card tbody td:nth-child(10) { width: 90px; min-width: 90px; }
         }
@@ -417,7 +418,8 @@
             .action-group { gap: 5px; }
             .btn-action { padding: 6px 9px; font-size: 10px; border-radius: 6px; }
             .btn-action i { font-size: 14px; }
-            .btn-action .label-text { display: none; }  /* 400px以下仅显示图标 */
+            .table-card thead th:nth-child(8),
+            .table-card tbody td:nth-child(8) { width: 80px; min-width: 80px; }
         }
 
         /* 播放模态框：手机全屏 */
