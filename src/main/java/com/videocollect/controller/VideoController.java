@@ -4,6 +4,7 @@ import com.videocollect.dao.VideoRecordDao;
 import com.videocollect.dto.ApiResult;
 import com.videocollect.dto.PageResult;
 import com.videocollect.model.VideoRecord;
+import com.videocollect.service.HlsCacheService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,6 +19,9 @@ public class VideoController {
 
     @Autowired
     private VideoRecordDao videoRecordDao;
+
+    @Autowired
+    private HlsCacheService hlsCacheService;
 
     /**
      * 首页（收藏列表页）
@@ -83,6 +87,8 @@ public class VideoController {
         if (record == null) {
             return ApiResult.error("记录不存在");
         }
+        // 先清除本地缓存（ts + m3u8 + tsUrlListCache）
+        hlsCacheService.clearVideoCache(record.getTitle());
         videoRecordDao.deleteById(id);
         return ApiResult.success("删除成功");
     }

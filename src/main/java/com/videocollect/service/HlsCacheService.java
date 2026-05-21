@@ -321,6 +321,29 @@ public class HlsCacheService {
         }
     }
 
+    /**
+     * 清除指定视频的本地缓存（ts + m3u8 + tsUrlListCache）
+     */
+    public void clearVideoCache(String title) {
+        if (title == null || title.trim().isEmpty()) return;
+        String key = sanitizeTitle(title);
+        Path dir = resolveDir(title);
+        try {
+            if (Files.exists(dir)) {
+                Files.walk(dir)
+                        .sorted(java.util.Comparator.reverseOrder())
+                        .forEach(p -> {
+                            try { Files.deleteIfExists(p); }
+                            catch (IOException e) { log.warn("删除缓存文件失败: {}", p, e); }
+                        });
+                log.info("已清除视频缓存: {}", key);
+            }
+            tsUrlListCache.remove(key);
+        } catch (IOException e) {
+            log.warn("清除视频缓存异常: {}", key, e);
+        }
+    }
+
     /** HTTP GET 下载文件字节（带 User-Agent + Referer 防盗链） */
     private byte[] downloadBytes(String url) {
         HttpURLConnection conn = null;
