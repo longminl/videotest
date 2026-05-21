@@ -202,12 +202,12 @@
         .status-3 .sd { background: #ca8a04; }
 
         /* 操作按钮 */
-        .action-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .action-group { display: flex; gap: 5px; flex-wrap: wrap; }
         .btn-action {
             background: transparent;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 8px 14px;
+            padding: 7px 12px;
             font-size: 13px;
             color: #64748b;
             transition: all 0.2s;
@@ -574,13 +574,13 @@
                     <th style="width:36px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="cursor:pointer;"></th>
                     <th style="width:48px">#</th>
                     <th>标题</th>
-                    <th style="width:100px">状态</th>
+                    <th style="width:110px">状态</th>
                     <th style="width:80px">延迟</th>
                     <th style="width:90px">缓存</th>
-                    <th style="width:75px">缓存大小</th>
+                    <th style="width:90px">缓存大小</th>
                     <th style="width:170px">操作</th>
-                    <th style="width:12%">来源</th>
-                    <th style="width:110px">收录时间</th>
+                    <th style="width:8%">来源</th>
+                    <th style="width:140px">收录时间</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
@@ -715,7 +715,7 @@
             const sc = item.status === 0 ? 'status-0' : item.status === 1 ? 'status-1' : item.status === 2 ? 'status-2' : 'status-3';
             const st = item.status === 0 ? '未检测' : item.status === 1 ? '可播放' : item.status === 2 ? '不可播放' : '解析失败';
             const lt = item.latencyMs != null ? item.latencyMs + 'ms' : '-';
-            const ct = item.createdAt ? item.createdAt.substring(0, 16) : '-';
+            const ct = item.createdAt ? item.createdAt.substring(0, 16).replace('T', ' ') : '-';
             const ttl = item.title && item.title.length > 32 ? item.title.substring(0, 32) + '...' : (item.title || '未命名');
             const src = item.sourceUrl && item.sourceUrl.length > 32 ? item.sourceUrl.substring(0, 32) + '...' : (item.sourceUrl || '-');
             // 缓存列内容
