@@ -57,6 +57,17 @@ public class HlsCacheService {
     /** 每个视频的 ts URL 列表缓存（key = sanitized title） */
     private final ConcurrentHashMap<String, List<String>> tsUrlListCache = new ConcurrentHashMap<>();
 
+    /** 缓存大小结果缓存（避免每次列表查询都 Files.walk），key = sanitized title */
+    private final ConcurrentHashMap<String, CacheSizeEntry> cacheSizeCache = new ConcurrentHashMap<>();
+    private static final long CACHE_SIZE_TTL_MS = 30_000;
+
+    private static class CacheSizeEntry {
+        final long bytes;
+        final long timestamp;
+        CacheSizeEntry(long bytes) { this.bytes = bytes; this.timestamp = System.currentTimeMillis(); }
+        boolean isExpired() { return System.currentTimeMillis() - timestamp > CACHE_SIZE_TTL_MS; }
+    }
+
     @PostConstruct
     public void init() {
         cachePath = Paths.get(cacheDir).toAbsolutePath();
@@ -339,6 +350,7 @@ public class HlsCacheService {
                 log.info("已清除视频缓存: {}", key);
             }
             tsUrlListCache.remove(key);
+            cacheSizeCache.remove(key);
         } catch (IOException e) {
             log.warn("清除视频缓存异常: {}", key, e);
         }
@@ -348,6 +360,16 @@ public class HlsCacheService {
      * 获取指定视频的缓存目录总大小（字节），无缓存返回 0
      */
     public long getCacheSizeBytes(String title) {
+        if (title == null || title.trim().isEmpty()) return 0;
+        String key = sanitizeTitle(title);
+        CacheSizeEntry entry = cacheSizeCache.get(key);
+        if (entry != null && !entry.isExpired()) return entry.bytes;
+        long bytes = computeCacheSizeBytes(title);
+        cacheSizeCache.put(key, new CacheSizeEntry(bytes));
+        return bytes;
+    }
+
+    private long computeCacheSizeBytes(String title) {
         if (title == null || title.trim().isEmpty()) return 0;
         Path dir = resolveDir(title);
         if (!Files.exists(dir)) return 0;
