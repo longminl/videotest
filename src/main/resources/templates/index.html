@@ -560,14 +560,39 @@
             <tbody id="tableBody">
                 <tr id="loadingRow">
                     <td colspan="8" class="text-center py-5" style="color:#94a3b8">
+                        <div class="skeleton" style="height:20px;width:60%;margin:0 auto"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
+    <!-- 分页 -->
+    <div class="pagination-custom">
+        <div class="page-info" id="pageInfo"></div>
+        <ul class="page-list" id="pagination"></ul>
+    </div>
+
+    <!-- 进度弹窗 -->
+    <div class="modal fade modal-custom" id="progressModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title"><i class="bi bi-arrow-repeat me-2"></i>批量检测</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="progress mb-3" style="height:8px;background:#e2e8f0;border-radius:99px;">
+                        <div id="progressBar" class="progress-bar" style="width:0%;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:99px;"></div>
+                    </div>
                     <p class="mb-1" id="progressText" style="font-size:14px;color:#475569;">准备中...</p>
                     <p class="mb-0" id="progressDetail" style="font-size:12px;color:#94a3b8;"></p>
+                </div>
+                <div class="modal-footer">
                     <button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">后台运行</button>
                 </div>
             </div>
         </div>
-    </div>
     </div>
 
     <!-- 播放模态框 -->
