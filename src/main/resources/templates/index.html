@@ -577,7 +577,7 @@
                     <th style="width:110px">状态</th>
                     <th style="width:80px">延迟</th>
                     <th style="width:90px">缓存</th>
-                    <th style="width:90px">缓存大小</th>
+                    <th style="width:105px">缓存大小</th>
                     <th style="width:180px">操作</th>
                     <th style="width:6%">来源</th>
                     <th style="width:140px">收录时间</th>
@@ -751,7 +751,7 @@
                     ${playHtml}
                     <a href="/detail/${item.id}" class="btn-action view"><i class="bi bi-eye"></i><span class="label-text">查看</span></a>
                     <button class="btn-action check" onclick="recheckOne(${item.id})"><i class="bi bi-arrow-repeat"></i><span class="label-text">检测</span></button>
-                    <button class="btn-action del" onclick="deleteOne(${item.id})"><i class="bi bi-trash3"></i></button>
+                    <button class="btn-action del" onclick="deleteOne(${item.id})"><i class="bi bi-trash3"></i><span class="label-text">删除</span></button>
                 </td>
                 <td>${item.sourceUrl ? '<a class="url-link" href="' + escapeHtml(item.sourceUrl) + '" target="_blank" title="' + escapeHtml(item.sourceUrl) + '">' + escapeHtml(src) + '</a>' : '<span class="url-text">-</span>'}</td>
                 <td class="time-text">${ct}</td>
