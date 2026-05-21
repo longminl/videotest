@@ -333,7 +333,7 @@
         <!-- 播放器 -->
         <div class="player-card">
             <div th:if="${record.status == 1}" id="playerWrapper">
-                <video id="videoPlayer" controls autoplay muted playsinline></video>
+                <video id="videoPlayer" muted playsinline></video>
             </div>
             <div class="player-placeholder" th:if="${record.status != 1}">
                 <i class="bi" th:classappend="${record.status == 2} ? 'bi-x-circle' : (${record.status == 0} ? 'bi-clock' : 'bi-exclamation-triangle')"></i>
@@ -463,9 +463,9 @@
                 var hlsReady = false;
                 hls.on(Hls.Events.MANIFEST_PARSED, function() {
                     hlsReady = true;
-                    // 微延迟确保 video metadata 已加载
                     setTimeout(function() {
                         window.player = new Plyr(video, plyrOptions);
+                        video.play();
                     }, 100);
                 });
                 hls.on(Hls.Events.ERROR, function(event, data) {
@@ -485,7 +485,8 @@
                     if (!hlsReady) {
                         console.warn('HLS 加载超时，使用原生播放器');
                         hls.destroy();
-                        video.src = proxyUrl;  // 直接请求 m3u8 代理
+                        video.controls = true;
+                        video.src = proxyUrl;
                     }
                 }, 10000);
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -493,12 +494,14 @@
                 video.src = proxyUrl;
                 video.addEventListener('loadedmetadata', function() {
                     window.player = new Plyr(video, plyrOptions);
+                    video.play();
                 }, { once: true });
             }
         } else {
-            // mp4 / webm 等直链 → 直接初始化 Plyr，无需等待加载完成
+            // mp4 / webm 等直链
             video.src = videoUrl;
             window.player = new Plyr(video, plyrOptions);
+            video.play();
         }
     })();
 
