@@ -14,6 +14,8 @@
 | Maven | 3.6+ | 打包用 |
 | MySQL | 5.5,5.7 | 端口 **3307**（非默认 3306） |
 
+> 所有前端静态资源（Bootstrap、Bootstrap Icons、Plyr、hls.js）已内置在 `static/lib/` 中，**无需互联网连接**即可正常渲染页面和播放视频。
+
 ### 初始化数据库
 
 ```sql
@@ -235,8 +237,9 @@ java.sql.SQLException: Access denied for user 'root'@'localhost'
 之前解析失败的老记录（status=3），直接点"重新检测"只会检查旧地址。新版本已修复：**重检会重新解析页面**，自动更新 `video_url` 为正确地址。对已存在的失败记录直接点"重新检测"即可。如仍未解决，可删除记录后重新提交。**重启服务后重检才生效**（需 `mvn clean package` 并重启）。
 
 #### 播放器不显示 / 白屏
-- 按 `F12` 打开控制台，检查 CDN 资源是否加载成功
-- Plyr / hls.js 依赖外网 CDN，如网络受限可替换 `application.yml` 注释中的备用 CDN
+- 按 `F12` 打开控制台，检查资源是否加载成功
+- 所有静态资源已本地化（`static/lib/`），不依赖外网 CDN
+- 如仍白屏，确认 `static/lib/` 目录完整存在
 
 #### ts 缓存不生效
 - 检查 `hls-cache/` 目录是否存在且有写入权限
