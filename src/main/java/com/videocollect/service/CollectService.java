@@ -174,7 +174,7 @@ public class CollectService {
     }
 
     /**
-     * 重新检测单条记录
+     * 重新检测单条记录（video_url==source_url 时重新解析页面）
      */
     public CollectResult recheck(Long id) {
         VideoRecord record = videoRecordDao.findById(id);
@@ -182,10 +182,16 @@ public class CollectService {
             return CollectResult.failure("记录不存在");
         }
 
+        // 如果 video_url 与 source_url 相同（之前解析失败），重新解析页面
+        if (record.getVideoUrl() != null && record.getVideoUrl().equals(record.getSourceUrl())) {
+            CollectResult parsed = tryReparse(record);
+            if (parsed.isSuccess()) return parsed;
+        }
+
+        // 原有逻辑：直接检测 stored video_url
         CheckResult result = videoChecker.check(record.getVideoUrl());
         int status = result.isPlayable() ? 1 : 2;
         videoRecordDao.updateStatus(id, status, result.getLatencyMs(), result.getErrorMsg());
-        // 重新检测时复位缓存状态
         videoRecordDao.updateIsCached(id, false);
 
         String msg = result.isPlayable() ? "检测成功，延迟 " + result.getLatencyMs() + "ms"
@@ -194,7 +200,79 @@ public class CollectService {
     }
 
     /**
-     * 批量重新检测（异步执行，返回进度对象）
+     * 尝试重新解析 source_url，如成功则更新记录并返回 success
+     */
+    private CollectResult tryReparse(VideoRecord record) {
+        Long id = record.getId();
+        String sourceUrl = record.getSourceUrl();
+        log.info("video_url == source_url，重新解析页面: {}", sourceUrl);
+
+        // 直链解析
+        if (isDirectVideoUrl(sourceUrl)) {
+            CheckResult checkResult = videoChecker.check(sourceUrl);
+            int status = checkResult.isPlayable() ? 1 : 2;
+            videoRecordDao.updateVideoUrl(id, sourceUrl);
+            videoRecordDao.updateStatus(id, status, checkResult.getLatencyMs(), checkResult.getErrorMsg());
+            videoRecordDao.updateIsCached(id, false);
+            String msg = status == 1 ? "重新解析成功（直链），延迟 " + checkResult.getLatencyMs() + "ms"
+                    : "重新解析失败: " + checkResult.getErrorMsg();
+            return CollectResult.success(msg, id);
+        }
+
+        // Jsoup 抓取 + 解析
+        Document doc = pageFetcher.fetch(sourceUrl);
+        if (doc == null) return CollectResult.failure("页面抓取失败");
+
+        String pageTitle = videoParser.extractPageTitle(doc);
+        List<String> videoUrls = videoParser.parse(doc);
+        if (videoUrls.isEmpty()) {
+            Document mobileDoc = pageFetcher.fetch(sourceUrl, MOBILE_UA);
+            if (mobileDoc != null) {
+                videoUrls = videoParser.parse(mobileDoc);
+            }
+        }
+
+        if (!videoUrls.isEmpty()) {
+            return saveReparseResult(id, videoUrls.get(0), videoUrls.size(),
+                    pageTitle, "Jsoup 重新解析");
+        }
+
+        // yt-dlp 降级
+        DlResult dlResult = videoDlpResolver.resolve(sourceUrl);
+        if (dlResult.isSuccess()) {
+            return saveReparseResult(id, dlResult.getVideoUrl(), 1,
+                    dlResult.getTitle(), "yt-dlp 重新解析");
+        }
+
+        log.warn("重新解析也失败: {}", dlResult.getErrorMsg());
+        return CollectResult.failure("重新解析失败: " + dlResult.getErrorMsg());
+    }
+
+    /**
+     * 保存重新解析结果到已有记录
+     */
+    private CollectResult saveReparseResult(Long id, String newVideoUrl, int urlCount,
+                                            String newPageTitle, String source) {
+        CheckResult checkResult = videoChecker.check(newVideoUrl);
+        int status = checkResult.isPlayable() ? 1 : 2;
+        String remark = source + "（共 " + urlCount + " 个视频链接）"
+                + (checkResult.getErrorMsg() != null ? "；检测结果: " + checkResult.getErrorMsg() : "");
+
+        videoRecordDao.updateVideoUrl(id, newVideoUrl);
+        videoRecordDao.updateStatus(id, status, checkResult.getLatencyMs(), remark);
+        if (newPageTitle != null) {
+            videoRecordDao.updatePageTitle(id, newPageTitle);
+        }
+        videoRecordDao.updateIsCached(id, false);
+
+        log.info("重新解析成功, ID={}, new video_url={}, status={}", id, newVideoUrl, status);
+        String msg = source + "成功"
+                + (status == 1 ? "，延迟 " + checkResult.getLatencyMs() + "ms" : "，不可播放");
+        return CollectResult.success(msg, id);
+    }
+
+    /**
+     * 批量重新检测（同步执行，返回进度对象）
      */
     public CheckProgress recheckAll() {
         List<VideoRecord> list = videoRecordDao.findNeedCheck();
@@ -202,6 +280,38 @@ public class CollectService {
 
         for (VideoRecord record : list) {
             progress.setCurrentUrl(record.getTitle());
+
+            if (record.getVideoUrl() != null && record.getVideoUrl().equals(record.getSourceUrl())) {
+                // 尝试重新解析
+                Document doc = pageFetcher.fetch(record.getSourceUrl());
+                List<String> videoUrls = new java.util.ArrayList<>();
+                if (doc != null) {
+                    videoUrls = videoParser.parse(doc);
+                    if (videoUrls.isEmpty()) {
+                        Document mobileDoc = pageFetcher.fetch(record.getSourceUrl(), MOBILE_UA);
+                        if (mobileDoc != null) {
+                            videoUrls = videoParser.parse(mobileDoc);
+                        }
+                    }
+                }
+
+                if (!videoUrls.isEmpty()) {
+                    String newVideoUrl = videoUrls.get(0);
+                    CheckResult checkResult = videoChecker.check(newVideoUrl);
+                    int status = checkResult.isPlayable() ? 1 : 2;
+                    String remark = "批量重新解析（共 " + videoUrls.size() + " 个视频链接）"
+                            + (checkResult.getErrorMsg() != null ? "；检测结果: " + checkResult.getErrorMsg() : "");
+                    videoRecordDao.updateVideoUrl(record.getId(), newVideoUrl);
+                    videoRecordDao.updateStatus(record.getId(), status, checkResult.getLatencyMs(), remark);
+
+                    if (status == 1) progress.setSuccessCount(progress.getSuccessCount() + 1);
+                    else progress.setFailCount(progress.getFailCount() + 1);
+                    progress.setCompleted(progress.getCompleted() + 1);
+                    continue;
+                }
+            }
+
+            // 原有逻辑：直接检测 stored video_url
             CheckResult result = videoChecker.check(record.getVideoUrl());
             int status = result.isPlayable() ? 1 : 2;
             videoRecordDao.updateStatus(record.getId(), status,

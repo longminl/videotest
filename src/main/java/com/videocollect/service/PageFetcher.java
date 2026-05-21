@@ -46,4 +46,25 @@ public class PageFetcher {
             return null;
         }
     }
+
+    /**
+     * 抓取非 HTML 响应（JSON / m3u8 等），返回原始响应体字符串
+     */
+    public String fetchRaw(String url) {
+        try {
+            log.info("正在请求原始数据: {}", url);
+            String body = Jsoup.connect(url)
+                    .userAgent(userAgent)
+                    .timeout(timeout)
+                    .ignoreContentType(true)
+                    .followRedirects(true)
+                    .execute()
+                    .body();
+            log.info("原始数据请求成功: {} ({} bytes)", url, body.length());
+            return body;
+        } catch (Exception e) {
+            log.warn("原始数据请求失败: {}, 原因: {}", url, e.getMessage());
+            return null;
+        }
+    }
 }

@@ -161,7 +161,7 @@ New-NetFirewallRule -DisplayName "video-collect" -Direction Inbound -LocalPort 8
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| `POST` | `/api/collect` | 提交 URL 收藏视频（iframe 递归 + yt-dlp 降级） |
+| `POST` | `/api/collect` | 提交 URL 收藏视频（iframe 递归 + AJAX API + yt-dlp 降级） |
 | `GET` | `/api/list` | 分页列表 |
 | `GET` | `/api/detail/{id}` | 详情 |
 | `PUT` | `/api/check/{id}` | 重新单条检测 |
@@ -220,15 +220,19 @@ java.sql.SQLException: Access denied for user 'root'@'localhost'
 - 下载 `yt-dlp.exe` 放到项目根目录或在配置中指定路径
 
 #### iframe 嵌套站点播放在线正常，提交后 status=3
-部分影视站将视频内嵌在 iframe 中，且 iframe 页面通过 JS 动态请求 API 获取视频地址（如 ArtPlayer + `api.php` 模式）。系统已支持：
+部分影视站将视频内嵌在 iframe 中，且 iframe 页面通过 JS 动态请求 API 获取视频地址（如 ArtPlayer + `api.php` 模式）。系统已支持三层降级解析：
 
 1. **iframe 递归解析**：自动抓取 iframe 页面内容，提取其中的静态视频地址
-2. **yt-dlp 降级**：静态解析失败后，自动调用 yt-dlp 通用提取器处理 JS 动态加载的地址
+2. **AJAX API 提取**：检测 ArtPlayer 等播放器的 `Url`/`Sign`/`From` 变量，直接调用后端 `api.php` 获取真实视频地址
+3. **yt-dlp 降级**：前两者均失败后，自动调用 yt-dlp 通用提取器
 
 如果该站点仍解析失败：
 - 确认 `yt-dlp.exe` 在项目根目录且可执行（运行 `yt-dlp --version` 测试）
 - 尝试提交 **手机版页面 URL**（部分站点仅移动端页面包含视频地址）
 - 可以直接提交 **iframe 的 src 地址**（浏览器开发者工具 → 找到 iframe 标签 → 复制 src 属性值）
+
+#### 重新检测不生效（已有记录解析失败）
+之前解析失败的老记录（status=3），直接点"重新检测"只会检查旧地址。新版本已修复：**重检会重新解析页面**，自动更新 `video_url` 为正确地址。对已存在的失败记录直接点"重新检测"即可。如仍未解决，可删除记录后重新提交。**重启服务后重检才生效**（需 `mvn clean package` 并重启）。
 
 #### 播放器不显示 / 白屏
 - 按 `F12` 打开控制台，检查 CDN 资源是否加载成功

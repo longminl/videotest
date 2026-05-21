@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -194,8 +195,97 @@ public class VideoParser {
             }
         }
 
+        // ====== 第7步：通过 AJAX API 获取视频地址（ArtPlayer 等播放器模式） ======
+        if (results.isEmpty()) {
+            fetchVideoUrlViaApi(scripts, doc, results);
+        }
+
         log.info("页面解析完成，共找到 {} 个视频链接 (标签+JS)", results.size());
         return results;
+    }
+
+    /**
+     * 第7步：当页面中通过 AJAX API 动态加载视频地址时，提取 API 参数并直接调用
+     * 典型场景：ArtPlayer 播放器 + api.php（常见于中文影视站）
+     */
+    private void fetchVideoUrlViaApi(List<Element> scripts, Document doc, List<String> results) {
+        String baseUri = doc.baseUri();
+        if (baseUri == null || baseUri.isEmpty()) return;
+
+        String urlParam = null, signParam = null, typeParam = null;
+        String apiEndpoint = null;
+
+        Pattern urlVar = Pattern.compile("(?:const|let|var)\\s+Url\\s*=\\s*['\"]([^'\"]+)['\"]", Pattern.CASE_INSENSITIVE);
+        Pattern signVar = Pattern.compile("(?:const|let|var)\\s+Sign\\s*=\\s*['\"]([^'\"]+)['\"]", Pattern.CASE_INSENSITIVE);
+        Pattern typeVar = Pattern.compile("(?:const|let|var)\\s+(?:From|t)\\s*=\\s*['\"]([^'\"]+)['\"]", Pattern.CASE_INSENSITIVE);
+        Pattern ajaxApi = Pattern.compile("url\\s*:\\s*['\"]([^'\"]+\\.php[^'\"]*)['\"]", Pattern.CASE_INSENSITIVE);
+
+        for (Element script : scripts) {
+            String raw = script.html();
+            if (raw == null || raw.isEmpty()) continue;
+            String content = raw.replace("\\/", "/");
+
+            if (urlParam == null) urlParam = matchFirst(content, urlVar);
+            if (signParam == null) signParam = matchFirst(content, signVar);
+            if (typeParam == null) typeParam = matchFirst(content, typeVar);
+            if (urlParam == null) continue;
+
+            if (apiEndpoint == null) {
+                apiEndpoint = matchFirst(content, ajaxApi);
+            }
+        }
+
+        if (urlParam == null || apiEndpoint == null) return;
+
+        String apiUrl;
+        if (apiEndpoint.startsWith("http://") || apiEndpoint.startsWith("https://")) {
+            apiUrl = apiEndpoint;
+        } else {
+            try {
+                apiUrl = new URL(new URL(baseUri), apiEndpoint).toString();
+            } catch (Exception e) {
+                log.warn("API 地址解析失败: {} + {}", baseUri, apiEndpoint);
+                return;
+            }
+        }
+
+        StringBuilder sb = new StringBuilder(apiUrl);
+        sb.append(apiUrl.contains("?") ? "&" : "?");
+        sb.append("url=").append(urlEncode(urlParam));
+        if (signParam != null) sb.append("&sign=").append(urlEncode(signParam));
+        if (typeParam != null) sb.append("&t=").append(urlEncode(typeParam));
+
+        log.info("检测到播放器 API，尝试获取视频地址: {}", apiUrl);
+        String response = pageFetcher.fetchRaw(sb.toString());
+        if (response == null || response.isEmpty()) return;
+
+        try {
+            // JSON 中可能含 \/ 转义斜杠，先标准化
+            String normalized = response.replace("\\/", "/");
+            Matcher m = Pattern.compile("\"url\"\\s*:\\s*\"(https?://[^\"]+)\"").matcher(normalized);
+            if (m.find()) {
+                String videoUrl = m.group(1);
+                if (isLikelyVideoUrl(videoUrl) && !results.contains(videoUrl)) {
+                    results.add(videoUrl);
+                    log.info("通过 API 获取到视频地址: {}", videoUrl);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("API 响应解析失败: {}", e.getMessage());
+        }
+    }
+
+    private String matchFirst(String text, Pattern pattern) {
+        Matcher m = pattern.matcher(text);
+        return m.find() ? m.group(1) : null;
+    }
+
+    private String urlEncode(String value) {
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (Exception e) {
+            return value;
+        }
     }
 
     /**

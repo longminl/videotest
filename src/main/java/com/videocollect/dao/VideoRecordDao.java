@@ -48,6 +48,14 @@ public interface VideoRecordDao {
     int updateIsCached(@Param("id") Long id,
                        @Param("isCached") Boolean isCached);
 
+    /** 更新视频地址 */
+    int updateVideoUrl(@Param("id") Long id,
+                       @Param("videoUrl") String videoUrl);
+
+    /** 更新页面标题 */
+    int updatePageTitle(@Param("id") Long id,
+                        @Param("pageTitle") String pageTitle);
+
     /** 删除单条记录 */
     int deleteById(@Param("id") Long id);
 

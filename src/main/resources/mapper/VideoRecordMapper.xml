@@ -86,6 +86,14 @@
         UPDATE video_collection SET remark = #{remark} WHERE id = #{id}
     </update>
 
+    <update id="updateVideoUrl">
+        UPDATE video_collection SET video_url = #{videoUrl} WHERE id = #{id}
+    </update>
+
+    <update id="updatePageTitle">
+        UPDATE video_collection SET page_title = #{pageTitle} WHERE id = #{id}
+    </update>
+
     <update id="updateIsCached">
         UPDATE video_collection SET is_cached = #{isCached} WHERE id = #{id}
     </update>
