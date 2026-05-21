@@ -2,6 +2,7 @@ package com.videocollect.controller;
 
 import com.videocollect.dao.VideoRecordDao;
 import com.videocollect.service.HlsCacheService;
+import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -46,7 +47,10 @@ public class HlsProxyController {
     private final ExecutorService cacheExecutor;
 
     public HlsProxyController() {
+        Dispatcher dispatcher = new Dispatcher();
+        dispatcher.setMaxRequestsPerHost(20);
         this.httpClient = new OkHttpClient.Builder()
+                .dispatcher(dispatcher)
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(10, TimeUnit.SECONDS)
                 .followRedirects(true)
@@ -223,6 +227,49 @@ public class HlsProxyController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("started", true);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 重新缓存（自动重试）：清空 m3u8 缓存 → 同步执行 doCacheWork → 返回状态
+     */
+    @PostMapping("/api/cache/retry")
+    public ResponseEntity<Map<String, Object>> cacheRetry(@RequestParam String videoUrl,
+                                                           @RequestParam(required = false) String title,
+                                                           @RequestParam(required = false) Long id) {
+        log.info("重试缓存: videoUrl={}, title={}", videoUrl, title);
+
+        if (!videoUrl.toLowerCase().contains(".m3u8")) {
+            return ResponseEntity.ok(createStatusResult(false, 0, 0, 0, "非 HLS 视频无需缓存"));
+        }
+
+        // 清空 m3u8 缓存，强制重新拉取
+        cacheService.clearM3u8Cache(videoUrl, title);
+
+        // 在当前线程同步执行：拉取 m3u8 + 改写 + 缓存 + 预下载 ts
+        doCacheWork(videoUrl, title, id);
+
+        // 返回缓存状态
+        List<String> tsUrls = new ArrayList<>();
+        collectTsUrls(videoUrl, tsUrls, title);
+
+        int total = tsUrls.size();
+        int cached = 0;
+        long cachedBytes = 0;
+        for (String url : tsUrls) {
+            File file = cacheService.getCachedFile(url, title);
+            if (file != null) {
+                cached++;
+                cachedBytes += file.length();
+            }
+        }
+
+        boolean allCached = total > 0 && cached == total;
+        if (allCached && id != null) {
+            videoRecordDao.updateIsCached(id, true);
+        }
+
+        Map<String, Object> result = createStatusResult(allCached, total, cached, cachedBytes, null);
         return ResponseEntity.ok(result);
     }
 

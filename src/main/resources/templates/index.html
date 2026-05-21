@@ -599,6 +599,7 @@
     let currentKeyword = '';
     var videoMap = {};
     var cachePollTimers = {};
+    var cacheProgress = {};
 
     document.addEventListener('DOMContentLoaded', function () {
         const params = new URLSearchParams(window.location.search);
@@ -668,6 +669,10 @@
                 cacheHtml = '<span style="color:#5a5f78;font-size:12px;">—</span>';
             } else if (item.isCached) {
                 cacheHtml = '<span style="color:#34d399;font-size:12px;"><i class="bi bi-check-circle-fill me-1"></i>已缓存</span>';
+            } else if (cachePollTimers[item.id] && cacheProgress[item.id]) {
+                // 缓存进行中，显示"缓存中…"
+                cacheHtml = '<div class="cache-bar-mini" id="cache-display-' + item.id + '">' +
+                    '<span class="label" style="color:#fbbf24;"><i class="bi bi-hourglass-split"></i> 缓存中…</span></div>';
             } else {
                 cacheHtml = '<div class="cache-bar-mini" id="cache-display-' + item.id + '">' +
                     '<button class="btn-action view cache-btn" onclick="startCache(' + item.id + ')" id="cache-btn-' + item.id + '"><i class="bi bi-download"></i>缓存</button>' +
@@ -884,6 +889,9 @@
         var btn = document.getElementById('cache-btn-' + id);
         if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
 
+        // 初始化进度跟踪
+        cacheProgress[id] = { lastTotal: 0, lastCached: 0, stalledSince: null, retryCount: 0, isRetrying: false };
+
         // 调用 POST /api/cache/start
         var url = '/api/cache/start?videoUrl=' + encodeURIComponent(info.videoUrl)
                 + '&title=' + encodeURIComponent(info.title || '')
@@ -895,6 +903,8 @@
             .then(function(data) {
                 if (data.started) {
                     showToast('缓存已启动', 'success');
+                    // 按钮改为"缓存中…"静态文本
+                    if (btn) { btn.innerHTML = '<i class="bi bi-cloud-download"></i> 缓存中…'; }
                     // 开始轮询
                     if (!cachePollTimers[id]) {
                         cachePollTimers[id] = setInterval(function() { pollCacheStatus(id); }, 5000);
@@ -903,6 +913,7 @@
                 } else {
                     showToast(data.error || '缓存启动失败', 'danger');
                     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-download"></i>缓存'; }
+                    delete cacheProgress[id];
                 }
             })
             .catch(function() {
@@ -922,30 +933,138 @@
             clearInterval(cachePollTimers[id]);
             delete cachePollTimers[id];
         }
+        if (cacheProgress[id]) {
+            delete cacheProgress[id];
+        }
     }
 
     function pollCacheStatus(id) {
         var info = videoMap[id];
         if (!info) { stopCachePoll(id); return; }
+
+        // 正在重试中，跳过本次轮询避免干扰
+        if (cacheProgress[id] && cacheProgress[id].isRetrying) return;
+
         var url = '/api/cache/status?videoUrl=' + encodeURIComponent(info.videoUrl)
                 + '&title=' + encodeURIComponent(info.title || '')
                 + '&id=' + id;
         fetch(url)
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (!data || data.total === 0) return;
                 var display = document.getElementById('cache-display-' + id);
                 if (!display) { stopCachePoll(id); return; }
-                var pct = Math.round(data.cached / data.total * 100);
-                var mb = (data.cachedBytes / 1048576).toFixed(1);
-                if (data.finished || data.cached === data.total) {
+
+                // 确保 cacheProgress 存在
+                if (!cacheProgress[id]) {
+                    cacheProgress[id] = { lastTotal: 0, lastCached: 0, stalledSince: null, retryCount: 0, isRetrying: false };
+                }
+                var prog = cacheProgress[id];
+
+                // 情况 1：缓存完成
+                if (data.finished || (data.total > 0 && data.cached === data.total)) {
                     display.innerHTML = '<span style="color:#34d399;font-size:12px;"><i class="bi bi-check-circle-fill me-1"></i>已缓存</span>';
                     stopCachePoll(id);
+                    return;
+                }
+
+                // 情况 2：total === 0（m3u8 未解析或正在拉取）
+                if (!data || data.total === 0) {
+                    display.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#fbbf24;"><i class="bi bi-hourglass-split"></i> 等待中…</span></div>';
+                    checkStall(id, data);
+                    return;
+                }
+
+                // 情况 3：total > 0，显示进度条
+                var pct = Math.round(data.cached / data.total * 100);
+                var mb = (data.cachedBytes / 1048576).toFixed(1);
+                display.innerHTML = '<div class="cache-bar-mini"><div class="track"><div class="fill" style="width:' + pct + '%;"></div></div><span class="label"><span class="num">' + data.cached + '/' + data.total + '</span> <span style="color:#6a6f85;font-size:11px;">' + mb + 'MB</span></span></div>';
+
+                // 进度有增长 → 重置停滞计时
+                if (data.cached > prog.lastCached) {
+                    prog.lastCached = data.cached;
+                    prog.lastTotal = data.total;
+                    prog.stalledSince = null;
+                } else if (prog.stalledSince === null) {
+                    // 第一次检测到无进度
+                    prog.stalledSince = Date.now();
+                    prog.lastTotal = data.total;
                 } else {
-                    display.innerHTML = '<div class="cache-bar-mini"><div class="track"><div class="fill" style="width:' + pct + '%;"></div></div><span class="label"><span class="num">' + data.cached + '/' + data.total + '</span></span></div>';
+                    // 检查是否停滞超时
+                    checkStall(id, data);
                 }
             })
             .catch(function() {});
+    }
+
+    /** 检查缓存进度是否停滞超过 20 秒，若是则自动重试 */
+    function checkStall(id, data) {
+        var prog = cacheProgress[id];
+        if (!prog || prog.isRetrying) return;
+        if (prog.stalledSince === null) {
+            prog.stalledSince = Date.now();
+            return;
+        }
+        var elapsed = Date.now() - prog.stalledSince;
+        if (elapsed >= 20000) {
+            cacheRetry(id);
+        } else if (elapsed >= 15000) {
+            // 最后 5 秒显示倒计时
+            var remaining = Math.ceil((20000 - elapsed) / 1000);
+            var display = document.getElementById('cache-display-' + id);
+            if (display) {
+                display.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#fbbf24;"><i class="bi bi-arrow-repeat"></i> ' + remaining + 's后重试…</span></div>';
+            }
+        }
+    }
+
+    /** 自动重试缓存：清 m3u8 缓存 → 重新拉取 → 更新状态 */
+    function cacheRetry(id) {
+        var info = videoMap[id];
+        if (!info) return;
+        var prog = cacheProgress[id];
+        if (!prog) return;
+
+        prog.retryCount++;
+        if (prog.retryCount >= 3) {
+            var display = document.getElementById('cache-display-' + id);
+            if (display) {
+                display.innerHTML = '<span style="color:#f87171;font-size:12px;"><i class="bi bi-exclamation-circle"></i> 缓存失败，请<a href="javascript:location.reload()" style="color:#6c8cff;">刷新</a></span>';
+            }
+            stopCachePoll(id);
+            return;
+        }
+
+        prog.isRetrying = true;
+        prog.stalledSince = null;
+
+        var display = document.getElementById('cache-display-' + id);
+        if (display) {
+            display.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#fbbf24;"><i class="bi bi-arrow-repeat"></i> 重试中…(' + prog.retryCount + '/3)</span></div>';
+        }
+
+        var url = '/api/cache/retry?videoUrl=' + encodeURIComponent(info.videoUrl)
+                + '&title=' + encodeURIComponent(info.title || '')
+                + '&id=' + id;
+        fetch(url, { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                prog.isRetrying = false;
+                // 用新状态立即更新 UI
+                var d = document.getElementById('cache-display-' + id);
+                if (d && data) {
+                    if (data.total > 0) {
+                        var pct = Math.round(data.cached / data.total * 100);
+                        d.innerHTML = '<div class="cache-bar-mini"><div class="track"><div class="fill" style="width:' + pct + '%;"></div></div><span class="label"><span class="num">' + data.cached + '/' + data.total + '</span></span></div>';
+                        prog.lastCached = data.cached;
+                        prog.lastTotal = data.total;
+                    } else {
+                        d.innerHTML = '<div class="cache-bar-mini"><span class="label" style="color:#fbbf24;"><i class="bi bi-hourglass-split"></i> 等待中…</span></div>';
+                    }
+                }
+            })
+            .catch(function() {
+                prog.isRetrying = false;
+            });
     }
 </script>
 </body>
