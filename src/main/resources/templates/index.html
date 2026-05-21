@@ -351,21 +351,23 @@
             .table-card tbody tr:hover td:nth-child(8) {
                 background: rgba(59,130,246,0.04);
             }
-            /* 手机端列宽收窄 */
+            /* 手机端列宽收窄（!important 压制 th 内联样式） */
             .table-card thead th:nth-child(2),
-            .table-card tbody td:nth-child(2) { width: 30px; min-width: 30px; }
+            .table-card tbody td:nth-child(2) { width: 28px !important; min-width: 28px; }
             .table-card thead th:nth-child(4),
-            .table-card tbody td:nth-child(4) { width: 75px; min-width: 75px; }
+            .table-card tbody td:nth-child(4) { width: 65px !important; min-width: 65px; }
             .table-card thead th:nth-child(5),
-            .table-card tbody td:nth-child(5) { width: 50px; min-width: 50px; }
+            .table-card tbody td:nth-child(5) { display: none; }
             .table-card thead th:nth-child(6),
-            .table-card tbody td:nth-child(6) { width: 60px; min-width: 60px; }
+            .table-card tbody td:nth-child(6) { width: 55px !important; min-width: 55px; }
             .table-card thead th:nth-child(7),
-            .table-card tbody td:nth-child(7) { width: 70px; min-width: 70px; }
+            .table-card tbody td:nth-child(7) { width: 60px !important; min-width: 60px; }
             .table-card thead th:nth-child(8),
-            .table-card tbody td:nth-child(8) { width: 60px; min-width: 60px; }
+            .table-card tbody td:nth-child(8) { width: 80px !important; min-width: 80px; }
+            .table-card thead th:nth-child(9),
+            .table-card tbody td:nth-child(9) { display: none; }
             .table-card thead th:nth-child(10),
-            .table-card tbody td:nth-child(10) { width: 90px; min-width: 90px; }
+            .table-card tbody td:nth-child(10) { width: 80px !important; min-width: 80px; }
         }
 
         /* 手机 */
@@ -419,7 +421,7 @@
             .btn-action { padding: 6px 9px; font-size: 10px; border-radius: 6px; }
             .btn-action i { font-size: 14px; }
             .table-card thead th:nth-child(8),
-            .table-card tbody td:nth-child(8) { width: 80px; min-width: 80px; }
+            .table-card tbody td:nth-child(8) { width: 80px !important; min-width: 80px; }
         }
 
         /* 播放模态框：手机全屏 */
