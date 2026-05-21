@@ -36,7 +36,8 @@ public class CollectService {
     @Autowired
     private VideoDlpResolver videoDlpResolver;
 
-    /** 常见的视频文件扩展名 */
+    /** 移动端 User-Agent（用于反反爬 && 某些仅手机版才嵌入视频地址的影视站） */
+    private static final String MOBILE_UA = "Mozilla/5.0 (Linux; Android 13; SM-S908E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36";
     private static final String[] VIDEO_EXTENSIONS = {
         ".mp4", ".webm", ".avi", ".mov", ".mkv", ".flv",
         ".wmv", ".m3u8", ".ts", ".mpg", ".mpeg", ".3gp"
@@ -111,6 +112,17 @@ public class CollectService {
 
         // 3. 解析视频链接（优先 Jsoup 静态解析）
         List<String> videoUrls = videoParser.parse(doc);
+        if (videoUrls.isEmpty()) {
+            // 3a. 桌面 UA 未找到 → 尝试手机 UA 重抓（部分影视站仅手机版嵌入视频地址）
+            log.info("桌面 UA 未找到视频，尝试手机 UA 重抓: {}", url);
+            Document mobileDoc = pageFetcher.fetch(url, MOBILE_UA);
+            if (mobileDoc != null) {
+                videoUrls = videoParser.parse(mobileDoc);
+                if (!videoUrls.isEmpty()) {
+                    log.info("手机 UA 解析成功，共 {} 个视频链接", videoUrls.size());
+                }
+            }
+        }
         if (!videoUrls.isEmpty()) {
             // Jsoup 成功，取第一个视频检测并入库
             String videoUrl = videoUrls.get(0);

@@ -22,16 +22,20 @@ public class PageFetcher {
     private int timeout;
 
     /**
-     * 抓取网页并解析为 Document 对象
-     *
-     * @param url 网页URL
-     * @return Document 对象，抓取失败返回 null
+     * 抓取网页并解析为 Document 对象（使用配置的 UA）
      */
     public Document fetch(String url) {
+        return fetch(url, userAgent);
+    }
+
+    /**
+     * 抓取网页并解析为 Document 对象（指定 User-Agent）
+     */
+    public Document fetch(String url, String ua) {
         try {
-            log.info("正在抓取页面: {}", url);
+            log.info("正在抓取页面: {} (UA: {})", url, ua.length() > 40 ? ua.substring(0, 40) + "..." : ua);
             Document doc = Jsoup.connect(url)
-                    .userAgent(userAgent)
+                    .userAgent(ua)
                     .timeout(timeout)
                     .followRedirects(true)
                     .get();
