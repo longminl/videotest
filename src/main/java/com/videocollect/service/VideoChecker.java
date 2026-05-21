@@ -126,7 +126,7 @@ public class VideoChecker {
     private boolean isVideoExtension(String url) {
         String lower = url.toLowerCase();
         return lower.endsWith(".mp4") || lower.endsWith(".webm")
-                || lower.endsWith(".m3u8") || lower.endsWith(".ts")
+                || lower.contains(".m3u8") || lower.endsWith(".ts")
                 || lower.endsWith(".flv") || lower.endsWith(".mov")
                 || lower.endsWith(".avi") || lower.endsWith(".mkv");
     }
