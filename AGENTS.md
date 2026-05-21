@@ -81,6 +81,7 @@ videotest/
 4. **蓝白色调配色改造** — index.html 和 detail.html 均由暗黑主题改为蓝白主题（`#f0f5ff` 背景，`#ffffff` 卡片，`#3b82f6` 主色）；Plyr 播放器保持暗色；更新所有 inline 颜色、JS 图标颜色、Toast 样式、滤镜圆点颜色。
 5. **修复蓝白迁移中误删的 HTML 结构** — 恢复表格 loadingRow 骨架屏、分页组件、进度弹窗（之前被合并到 table 内部导致页面结构损坏→网络错误）。
 6. **删除视频同步清除本地缓存** — HlsCacheService.clearVideoCache() 删除 `{cache-dir}/{title}/`（含 ts + m3u8 子目录）+ 清除 tsUrlListCache 内存条目；VideoController.delete() 在删 DB 前调用。
+7. **批量删除功能** — 表格新增复选框列 + 全选 + 批量删除按钮；后端 `DELETE /api/delete-batch` 接收 ID 数组，逐条清缓存再批量删 DB。
 
 ### 阻塞
 - yt-dlp.exe 下载受限（GitHub 国内慢，SourceForge 文件截断），需用户自行获取。
