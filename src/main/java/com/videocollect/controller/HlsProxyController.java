@@ -91,7 +91,11 @@ public class HlsProxyController {
         for (String line : lines) {
             String trimmed = line.trim();
             if (trimmed.isEmpty() || trimmed.startsWith("#")) {
-                sb.append(line).append("\n");
+                if (trimmed.startsWith("#EXT-X-KEY:")) {
+                    sb.append(rewriteExtXKeyUri(line, baseUrl, title)).append("\n");
+                } else {
+                    sb.append(line).append("\n");
+                }
             } else {
                 String absoluteUrl = resolveAbsoluteUrl(trimmed, baseUrl);
                 try {
@@ -195,6 +199,28 @@ public class HlsProxyController {
         }
     }
 
+    /**
+     * 代理 AES-128 加密密钥文件
+     */
+    @GetMapping("/proxy/key")
+    public ResponseEntity<Resource> proxyKey(@RequestParam String url) {
+        log.info("代理密钥: {}", url);
+        byte[] data = downloadBytes(url);
+        if (data == null) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
+        }
+        ByteArrayResource resource = new ByteArrayResource(data) {
+            @Override
+            public String getFilename() {
+                return "enc.key";
+            }
+        };
+        return ResponseEntity.ok()
+                .contentType(MediaType.valueOf("application/octet-stream"))
+                .contentLength(data.length)
+                .body(resource);
+    }
+
     // ==================== 缓存操作 & 状态查询 ====================
 
     /**
@@ -288,7 +314,11 @@ public class HlsProxyController {
         for (String line : lines) {
             String trimmed = line.trim();
             if (trimmed.isEmpty() || trimmed.startsWith("#")) {
-                sb.append(line).append("\n");
+                if (trimmed.startsWith("#EXT-X-KEY:")) {
+                    sb.append(rewriteExtXKeyUri(line, baseUrl, title)).append("\n");
+                } else {
+                    sb.append(line).append("\n");
+                }
             } else {
                 String absoluteUrl = resolveAbsoluteUrl(trimmed, baseUrl);
                 try {
@@ -524,5 +554,39 @@ public class HlsProxyController {
         }
         // 相对路径
         return baseUrl + tsUrl;
+    }
+
+    /**
+     * 改写 #EXT-X-KEY 行中的 URI 为代理地址
+     * 例如: #EXT-X-KEY:METHOD=AES-128,URI="enc.key",IV=0x...
+     *   →   #EXT-X-KEY:METHOD=AES-128,URI="/proxy/key?url=https%3A%2F%2F...%2Fenc.key",IV=0x...
+     */
+    private String rewriteExtXKeyUri(String line, String baseUrl, String title) {
+        int uriIdx = line.indexOf("URI=\"");
+        char quoteChar = '"';
+        if (uriIdx < 0) {
+            uriIdx = line.indexOf("URI='");
+            quoteChar = '\'';
+        }
+        if (uriIdx < 0) return line;
+
+        int valueStart = uriIdx + 5; // length of URI=" or URI='
+        int valueEnd = line.indexOf(quoteChar, valueStart);
+        if (valueEnd < 0) return line;
+
+        String uriValue = line.substring(valueStart, valueEnd);
+        if (uriValue.startsWith("/proxy/")) return line;
+
+        String absoluteUri = resolveAbsoluteUrl(uriValue, baseUrl);
+        try {
+            String encoded = URLEncoder.encode(absoluteUri, "UTF-8");
+            String encodedTitle = (title != null && !title.isEmpty())
+                    ? "&title=" + URLEncoder.encode(title, "UTF-8") : "";
+            String proxyUri = "/proxy/key?url=" + encoded + encodedTitle;
+            return line.substring(0, valueStart) + proxyUri + line.substring(valueEnd);
+        } catch (Exception e) {
+            log.warn("EXT-X-KEY URI 编码失败: {}", absoluteUri, e);
+            return line;
+        }
     }
 }
