@@ -170,6 +170,7 @@ New-NetFirewallRule -DisplayName "video-collect" -Direction Inbound -LocalPort 8
 | `DELETE` | `/api/delete/{id}` | 删除记录 |
 | `GET` | `/proxy/m3u8` | 代理 m3u8（含改写 + 缓存） |
 | `GET` | `/proxy/ts` | 代理 ts（含磁盘缓存 + 播放预取） |
+| `GET` | `/proxy/key` | 代理 AES-128 加密密钥文件 |
 | `POST` | `/api/cache/start` | 启动全量缓存（异步） |
 | `GET` | `/api/cache/status` | 查询缓存进度 |
 | `GET` | `/api/cache/clear-m3u8` | 清除 m3u8 缓存 |
@@ -226,6 +227,11 @@ java.sql.SQLException: Access denied for user 'root'@'localhost'
 - 检查 `hls-cache/` 目录是否存在且有写入权限
 - 检查启动日志中是否有 `HLS 缓存目录: ...` 的日志
 - 删除 `hls-cache/` 后重启，让程序重新创建
+
+#### AES-128 加密的 m3u8 播放黑屏
+部分 m3u8 使用 AES-128 加密（包含 `#EXT-X-KEY` 标签），密钥文件通常以相对路径（如 `enc.key`）引用的。系统会自动将密钥 URI 改写为 `/proxy/key?url=...`，通过服务端代理拉取密钥，解决浏览器端相对路径解析失败的问题。
+
+无需额外配置，自动生效。
 
 #### 改了代码如何重启
 ```bash
