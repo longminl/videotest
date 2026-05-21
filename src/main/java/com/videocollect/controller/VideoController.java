@@ -62,6 +62,9 @@ public class VideoController {
 
         int offset = (page - 1) * pageSize;
         java.util.List<VideoRecord> list = videoRecordDao.findPage(offset, pageSize, status, keyword);
+        for (VideoRecord r : list) {
+            r.setCacheSize(hlsCacheService.getCacheSizeText(r.getTitle()));
+        }
         long total = videoRecordDao.count(status, keyword);
         PageResult<VideoRecord> pageResult = new PageResult<>(list, total, page, pageSize);
         return ApiResult.success(pageResult);
@@ -77,6 +80,7 @@ public class VideoController {
         if (record == null) {
             return ApiResult.error("记录不存在");
         }
+        record.setCacheSize(hlsCacheService.getCacheSizeText(record.getTitle()));
         return ApiResult.success(record);
     }
 

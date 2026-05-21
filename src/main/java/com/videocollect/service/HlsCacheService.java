@@ -344,6 +344,38 @@ public class HlsCacheService {
         }
     }
 
+    /**
+     * 获取指定视频的缓存目录总大小（字节），无缓存返回 0
+     */
+    public long getCacheSizeBytes(String title) {
+        if (title == null || title.trim().isEmpty()) return 0;
+        Path dir = resolveDir(title);
+        if (!Files.exists(dir)) return 0;
+        try {
+            return Files.walk(dir)
+                    .filter(p -> p.toFile().isFile())
+                    .mapToLong(p -> {
+                        try { return Files.size(p); }
+                        catch (IOException e) { return 0; }
+                    })
+                    .sum();
+        } catch (IOException e) {
+            log.warn("计算缓存大小失败: {}", dir, e);
+            return 0;
+        }
+    }
+
+    /**
+     * 获取指定视频的缓存大小（人类可读格式），如 "12.3 MB"、"860 KB"
+     */
+    public String getCacheSizeText(String title) {
+        long bytes = getCacheSizeBytes(title);
+        if (bytes == 0) return "-";
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
+    }
+
     /** HTTP GET 下载文件字节（带 User-Agent + Referer 防盗链） */
     private byte[] downloadBytes(String url) {
         HttpURLConnection conn = null;

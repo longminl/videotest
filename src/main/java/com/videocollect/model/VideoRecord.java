@@ -24,6 +24,8 @@ public class VideoRecord {
     private String remark;
     /** HLS ts 是否已全部缓存 */
     private Boolean isCached;
+    /** 缓存文件总大小（非 DB 字段，运行时计算） */
+    private String cacheSize;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -41,6 +43,9 @@ public class VideoRecord {
 
     public boolean getIsCached() { return isCached != null && isCached; }
     public void setIsCached(Boolean isCached) { this.isCached = isCached; }
+
+    public String getCacheSize() { return cacheSize; }
+    public void setCacheSize(String cacheSize) { this.cacheSize = cacheSize; }
 
     public String getStatusText() {
         if (status == null) return "未检测";

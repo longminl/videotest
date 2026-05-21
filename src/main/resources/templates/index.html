@@ -334,17 +334,17 @@
             .pagination-custom { flex-direction: column; gap: 8px; align-items: center; }
             .page-info { font-size: 12px; }
             /* 操作列悬浮跟随滚动 */
-            .table-card thead th:nth-child(7),
-            .table-card tbody td:nth-child(7) {
+            .table-card thead th:nth-child(8),
+            .table-card tbody td:nth-child(8) {
                 position: sticky;
                 right: 0;
                 z-index: 1;
                 background: #ffffff;
             }
-            .table-card tbody td:nth-child(7) {
+            .table-card tbody td:nth-child(8) {
                 box-shadow: -4px 0 12px rgba(0,0,0,0.08);
             }
-            .table-card tbody tr:hover td:nth-child(7) {
+            .table-card tbody tr:hover td:nth-child(8) {
                 background: rgba(59,130,246,0.04);
             }
         }
@@ -361,8 +361,8 @@
             .table-card { border-radius: 10px; }
             .table-card thead th { font-size: 11px; padding: 8px 6px; }
             .table-card tbody td { padding: 8px 6px; font-size: 12px; }
-            .table-card thead th:nth-child(8),
-            .table-card tbody td:nth-child(8) { display: none; }  /* 隐藏来源列 */
+            .table-card thead th:nth-child(9),
+            .table-card tbody td:nth-child(9) { display: none; }  /* 隐藏来源列 */
             .latency-text { font-size: 12px; }
             .cache-cell { font-size: 11px; }
             .cache-bar-mini .track { width: 36px; }
@@ -389,8 +389,10 @@
             .filter-pill { font-size: 11px; padding: 5px 8px; }
             .table-card thead th,
             .table-card tbody td { padding: 6px 4px; font-size: 11px; }
-            .table-card thead th:nth-child(9),
-            .table-card tbody td:nth-child(9) { display: none; }  /* 隐藏收录时间列 */
+            .table-card thead th:nth-child(7),
+            .table-card tbody td:nth-child(7),
+            .table-card thead th:nth-child(10),
+            .table-card tbody td:nth-child(10) { display: none; }  /* 隐藏缓存大小+收录时间 */
             .status-pill { font-size: 10px; padding: 2px 6px; }
             .btn-action { padding: 3px 5px; font-size: 9px; }
         }
@@ -567,6 +569,7 @@
                     <th style="width:100px">状态</th>
                     <th style="width:80px">延迟</th>
                     <th style="width:90px">缓存</th>
+                    <th style="width:75px">缓存大小</th>
                     <th style="width:150px">操作</th>
                     <th style="width:22%">来源</th>
                     <th style="width:110px">收录时间</th>
@@ -735,6 +738,7 @@
                 <td><span class="status-pill ${sc}"><span class="sd"></span>${st}</span></td>
                 <td class="latency-text">${lt}</td>
                 <td class="cache-cell" id="cache-cell-${item.id}">${cacheHtml}</td>
+                <td style="font-size:13px;color:#64748b;">${item.cacheSize || '-'}</td>
                 <td class="action-group">
                     ${playHtml}
                     <a href="/detail/${item.id}" class="btn-action view"><i class="bi bi-eye"></i>查看</a>
