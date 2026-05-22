@@ -19,16 +19,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.videocollect.app.ui.theme.*
@@ -95,24 +98,57 @@ fun PlayerScreen(
     var isPlaying by remember { mutableStateOf(false) }
     var showSpeedMenu by remember { mutableStateOf(false) }
     var currentSpeed by remember { mutableFloatStateOf(1f) }
+    var playerError by remember { mutableStateOf(false) }
 
-    val player = remember {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(playUrl))
-            prepare()
-            playWhenReady = true
+    val dataSourceFactory = remember {
+        DefaultHttpDataSource.Factory()
+            .setUserAgent("Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.144 Mobile Safari/537.36")
+            .setAllowCrossProtocolRedirects(true)
+            .setConnectTimeoutMs(15000)
+            .setReadTimeoutMs(30000)
+    }
+
+    val mediaSourceFactory = remember { HlsMediaSource.Factory(dataSourceFactory) }
+
+    val player = remember(playUrl) {
+        if (playUrl.isBlank()) {
+            playerError = true
+            null
+        } else {
+            playerError = false
+            ExoPlayer.Builder(context).build().apply {
+                val mediaItem = MediaItem.Builder()
+                    .setUri(playUrl)
+                    .setMediaMetadata(
+                        androidx.media3.common.MediaMetadata.Builder()
+                            .setTitle(title)
+                            .build()
+                    )
+                    .build()
+                val source: MediaSource = if (playUrl.contains(".m3u8", ignoreCase = true) || playUrl.contains("proxy/m3u8", ignoreCase = true)) {
+                    mediaSourceFactory.createMediaSource(mediaItem)
+                } else {
+                    androidx.media3.exoplayer.source.ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+                }
+                setMediaSource(source)
+                prepare()
+                playWhenReady = true
+            }
         }
     }
 
     DisposableEffect(Unit) {
-        onDispose { player.release() }
+        onDispose { player?.release() }
     }
 
     // Track play state
     LaunchedEffect(player) {
-        player.addListener(object : Player.Listener {
+        player?.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
+            }
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                playerError = true
             }
         })
     }
@@ -123,130 +159,145 @@ fun PlayerScreen(
             .background(Color.Black)
             .clickable { isShowingControls = !isShowingControls }
     ) {
-        // Video view
-        val mediaPlayer = player
-        AndroidView(
-            factory = {
-                PlayerView(it).apply {
-                    this.player = mediaPlayer
-                    useController = false
-                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-                    keepScreenOn = true
+        if (playerError || playUrl.isBlank()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.Warning, contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(48.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("无法播放此视频", color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 16.sp, textAlign = TextAlign.Center)
                 }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // Controls overlay
-        AnimatedVisibility(
-            visible = isShowingControls,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                // Top bar
-                Surface(
-                    modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
-                    color = Color.Black.copy(alpha = 0.6f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "返回",
-                                tint = Color.White, modifier = Modifier.size(28.dp))
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = title,
-                            color = Color.White,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
+            }
+        } else {
+            // Video view
+            val mediaPlayer = player
+            AndroidView(
+                factory = {
+                    PlayerView(it).apply {
+                        this.player = mediaPlayer
+                        useController = false
+                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                        keepScreenOn = true
                     }
-                }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
 
-                // Center play/pause
-                IconButton(
-                    onClick = {
-                        if (player.isPlaying) player.pause() else player.play()
-                    },
-                    modifier = Modifier
-                        .size(64.dp)
-                        .align(Alignment.Center)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.5f))
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) "暂停" else "播放",
-                        tint = Color.White,
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
-
-                // Bottom controls
-                Surface(
-                    modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
-                    color = Color.Black.copy(alpha = 0.6f)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+            // Controls overlay
+            AnimatedVisibility(
+                visible = isShowingControls,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // Top bar
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
+                        color = Color.Black.copy(alpha = 0.6f)
                     ) {
-                        // Speed button
-                        Box {
-                            IconButton(
-                                onClick = { showSpeedMenu = !showSpeedMenu },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Text(
-                                    "${currentSpeed}x",
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.Default.ArrowBack, contentDescription = "返回",
+                                    tint = Color.White, modifier = Modifier.size(28.dp))
                             }
-                            DropdownMenu(
-                                expanded = showSpeedMenu,
-                                onDismissRequest = { showSpeedMenu = false },
-                                modifier = Modifier.background(SurfaceDark)
-                            ) {
-                                listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f, 3f, 4f).forEach { speed ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                "${speed}x",
-                                                color = if (speed == currentSpeed) Blue400 else Color.White
-                                            )
-                                        },
-                                        onClick = {
-                                            currentSpeed = speed
-                                            player.setPlaybackSpeed(speed)
-                                            showSpeedMenu = false
-                                        }
-                                    )
-                                }
-                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = title,
+                                color = Color.White,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 16.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
                         }
+                    }
 
-                        // Fullscreen toggle
+                    // Center play/pause
+                    val p = player
+                    if (p != null) {
                         IconButton(
-                            onClick = { /* Already fullscreen */ },
-                            modifier = Modifier.size(40.dp)
+                            onClick = {
+                                if (p.isPlaying) p.pause() else p.play()
+                            },
+                            modifier = Modifier
+                                .size(64.dp)
+                                .align(Alignment.Center)
+                                .clip(CircleShape)
+                                .background(Color.Black.copy(alpha = 0.5f))
                         ) {
                             Icon(
-                                Icons.Default.FullscreenExit,
-                                contentDescription = "退出全屏",
+                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = if (isPlaying) "暂停" else "播放",
                                 tint = Color.White,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(36.dp)
                             )
+                        }
+                    }
+
+                    // Bottom controls
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
+                        color = Color.Black.copy(alpha = 0.6f)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            // Speed button
+                            Box {
+                                IconButton(
+                                    onClick = { showSpeedMenu = !showSpeedMenu },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Text(
+                                        "${currentSpeed}x",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = showSpeedMenu,
+                                    onDismissRequest = { showSpeedMenu = false },
+                                    modifier = Modifier.background(SurfaceDark)
+                                ) {
+                                    listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f, 3f, 4f).forEach { speed ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    "${speed}x",
+                                                    color = if (speed == currentSpeed) Blue400 else Color.White
+                                                )
+                                            },
+                                            onClick = {
+                                                currentSpeed = speed
+                                                p?.setPlaybackSpeed(speed)
+                                                showSpeedMenu = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Fullscreen toggle
+                            IconButton(
+                                onClick = { /* Already fullscreen */ },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.FullscreenExit,
+                                    contentDescription = "退出全屏",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
                     }
                 }

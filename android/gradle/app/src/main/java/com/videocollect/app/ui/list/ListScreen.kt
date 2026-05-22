@@ -34,7 +34,8 @@ import kotlinx.coroutines.launch
 fun ListScreen(
     viewModel: ListViewModel,
     onAddClick: () -> Unit,
-    onDetailClick: (Long) -> Unit
+    onDetailClick: (Long) -> Unit,
+    onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
@@ -97,6 +98,9 @@ fun ListScreen(
                         )
                     },
                     actions = {
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(Icons.Default.Settings, contentDescription = "设置")
+                        }
                         if (uiState.items.isNotEmpty()) {
                             IconButton(onClick = { viewModel.toggleSelectMode() }) {
                                 Icon(Icons.Default.Checklist, contentDescription = "批量操作")

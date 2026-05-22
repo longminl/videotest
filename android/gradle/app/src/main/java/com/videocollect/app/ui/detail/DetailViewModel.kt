@@ -19,6 +19,7 @@ data class DetailUiState(
     val isRechecking: Boolean = false,
     val cacheStatus: CacheStatusResponse? = null,
     val isPollingCache: Boolean = false,
+    val cacheError: String? = null,
     val isDeleting: Boolean = false
 )
 
@@ -86,11 +87,22 @@ class DetailViewModel : ViewModel() {
 
     fun startCache() {
         val r = _uiState.value.record ?: return
+        if (r.videoUrl.isNullOrBlank()) {
+            _uiState.update { it.copy(cacheError = "视频地址为空，无法缓存") }
+            return
+        }
         viewModelScope.launch {
+            _uiState.update { it.copy(cacheError = null, cacheStatus = null) }
             try {
-                RetrofitClient.getApiService().cacheStart(r.videoUrl ?: "", r.title, r.id)
-                pollCacheStatus()
-            } catch (_: Exception) {}
+                val result = RetrofitClient.getApiService().cacheStart(r.videoUrl ?: "", r.title, r.id)
+                if (result.isSuccess) {
+                    pollCacheStatus()
+                } else {
+                    _uiState.update { it.copy(cacheError = result.message) }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(cacheError = e.message ?: "启动缓存失败") }
+            }
         }
     }
 
@@ -102,7 +114,7 @@ class DetailViewModel : ViewModel() {
             try {
                 val result = RetrofitClient.getApiService().cacheStatus(r.videoUrl ?: "", r.title, r.id)
                 if (result.isSuccess && result.data != null) {
-                    _uiState.update { it.copy(cacheStatus = result.data) }
+                    _uiState.update { it.copy(cacheStatus = result.data, cacheError = null) }
                     if (result.data.finished == true) {
                         _uiState.update { it.copy(isPollingCache = false) }
                         load(r.id ?: 0)
@@ -111,7 +123,7 @@ class DetailViewModel : ViewModel() {
                 }
             } catch (_: Exception) {}
         }
-        _uiState.update { it.copy(isPollingCache = false) }
+        _uiState.update { it.copy(isPollingCache = false, cacheError = "缓存超时，请重试") }
     }
 
     fun delete(onDeleted: () -> Unit) {

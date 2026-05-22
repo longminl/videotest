@@ -14,5 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "video-collect"
+rootProject.name = "video-collect-android"
 include(":app")
+project(":app").projectDir = file("gradle/app")

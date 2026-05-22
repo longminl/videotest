@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -113,7 +114,8 @@ fun DetailScreen(
                     if (record.isM3u8) {
                         CacheProgressCard(
                             cacheStatus = uiState.cacheStatus,
-                            isPolling = uiState.isPollingCache
+                            isPolling = uiState.isPollingCache,
+                            cacheError = uiState.cacheError
                         )
                     }
 
@@ -238,7 +240,7 @@ private fun ActionButtons(
 }
 
 @Composable
-private fun CacheProgressCard(cacheStatus: CacheStatusResponse?, isPolling: Boolean) {
+private fun CacheProgressCard(cacheStatus: CacheStatusResponse?, isPolling: Boolean, cacheError: String?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -259,6 +261,11 @@ private fun CacheProgressCard(cacheStatus: CacheStatusResponse?, isPolling: Bool
                     Spacer(modifier = Modifier.width(8.dp))
                     CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = Blue400)
                 }
+            }
+
+            if (cacheError != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(cacheError, color = StatusRed, fontSize = 13.sp)
             }
 
             if (cacheStatus != null) {
@@ -284,9 +291,12 @@ private fun CacheProgressCard(cacheStatus: CacheStatusResponse?, isPolling: Bool
                         fontWeight = FontWeight.Medium
                     )
                 }
-            } else {
+            } else if (cacheError == null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("点击上方「缓存」按钮开始下载", color = TextTertiary, fontSize = 13.sp)
+                Text(
+                    if (isPolling) "等待中…" else "点击上方「缓存」按钮开始下载",
+                    color = TextTertiary, fontSize = 13.sp
+                )
             }
         }
     }
@@ -351,6 +361,8 @@ private fun RemarkCard(
 
 @Composable
 private fun SourceInfoCard(record: VideoRecord) {
+    val clipboardManager = LocalClipboardManager.current
+    val context = androidx.compose.ui.platform.LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -369,13 +381,29 @@ private fun SourceInfoCard(record: VideoRecord) {
                 Text("来源信息", fontWeight = FontWeight.SemiBold, color = TextPrimary, fontSize = 15.sp)
             }
             Spacer(modifier = Modifier.height(10.dp))
-            InfoRow("来源", record.sourceUrl ?: "-")
-            InfoRow("视频", record.videoUrl ?: "-")
+            CopyableInfoRow("来源", record.sourceUrl ?: "-", clipboardManager, context)
+            CopyableInfoRow("视频", record.videoUrl ?: "-", clipboardManager, context)
             InfoRow("收录", record.createdAt ?: "-")
             if (record.pageTitle != null) {
                 InfoRow("页面", record.pageTitle)
             }
         }
+    }
+}
+
+@Composable
+private fun CopyableInfoRow(label: String, value: String, clipboardManager: androidx.compose.ui.platform.ClipboardManager, context: android.content.Context) {
+    Column(modifier = Modifier
+        .padding(vertical = 4.dp)
+        .clickable {
+            if (value.isNotEmpty() && value != "-") {
+                clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(value))
+                android.widget.Toast.makeText(context, "已复制: $value", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    ) {
+        Text(label, color = TextTertiary, fontSize = 12.sp)
+        Text(value, color = Blue600, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 
