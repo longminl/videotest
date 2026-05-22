@@ -4,7 +4,9 @@ spring:
     driver-class-name: org.sqlite.JDBC
     username:
     password:
+    hikari:
+      maximum-pool-size: 1
   sql:
     init:
       mode: always
-      schema: classpath:sql/init-sqlite.sql
+      schema-locations: classpath:sql/init-sqlite.sql
