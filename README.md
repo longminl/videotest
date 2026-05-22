@@ -12,23 +12,30 @@
 |------|------|------|
 | Java | 1.8 | pom.xml 中 `<java.version>1.8</java.version>` |
 | Maven | 3.6+ | 打包用 |
-| MySQL | 5.5,5.7 | 端口 **3307**（非默认 3306） |
+| MySQL | 5.5,5.7 | 端口 **3307**（非默认 3306），使用 MySQL profile（默认） |
+| 或 SQLite | — | 无需安装数据库，使用 `sqlite` profile |
 
 > 所有前端静态资源（Bootstrap、Bootstrap Icons、Plyr、hls.js）已内置在 `static/lib/` 中，**无需互联网连接**即可正常渲染页面和播放视频。
 
 ### 初始化数据库
 
+**MySQL 模式**：首次使用需执行建库脚本
 ```sql
 source sql/init.sql
 ```
 
-自动创建库 `video_collect` 和表 `video_collection`（含 `is_cached` 字段）。
+**SQLite 模式**：无需手动初始化，首次启动自动在应用根目录创建 `video-collect.db` 并建表。
 
 ### 打包 & 启动
 
 ```bash
 mvn clean package -DskipTests
+
+# MySQL 模式（默认）
 java -jar target/video-collect-1.0.0.jar
+
+# SQLite 模式（无需安装数据库）
+java -jar target/video-collect-1.0.0.jar --spring.profiles.active=sqlite
 ```
 
 打开浏览器访问 `http://localhost:8080`。
@@ -37,13 +44,18 @@ java -jar target/video-collect-1.0.0.jar
 
 ## 2. 配置说明
 
-`application.yml` 核心配置：
+数据源配置已分离到独立的 profile 文件中，通过 `spring.profiles.active` 切换：
+
+| Profile | 配置文件 | 说明 |
+|---------|----------|------|
+| `mysql`（默认） | `application-mysql.yml` | MySQL 8.0 连接配置 |
+| `sqlite` | `application-sqlite.yml` | 本地 SQLite 文件 |
+
+核心公共配置（`application.yml`）：
 
 | 配置 | 说明 | 默认值 |
 |------|------|--------|
-| `spring.datasource.url` | MySQL 连接地址 | `jdbc:mysql://127.0.0.1:3307/video_collect?...` |
-| `spring.datasource.username` | 数据库用户名 | `root` |
-| `spring.datasource.password` | 数据库密码 | `123456` |
+| `server.port` | 服务端口 | `8080` |
 | `video.check.connect-timeout` | 视频检测连接超时 | `5000`（毫秒） |
 | `video.check.read-timeout` | 视频检测读取超时 | `5000`（毫秒） |
 | `video.fetch.timeout` | 页面抓取超时 | `8000`（毫秒） |
@@ -201,20 +213,39 @@ New-NetFirewallRule -DisplayName "video-collect" -Direction Inbound -LocalPort 8
 
 ### 数据库
 
+**MySQL 模式：**
 - 首次部署执行 `sql/init.sql` 创建库表
 - 已有数据的升级：手动执行 `ALTER TABLE video_collection ADD is_cached TINYINT(1) DEFAULT 0;`
-- MySQL 端口为 **3307**（非标准），修改需同步更新 `application.yml`
+- MySQL 端口为 **3307**（非标准），修改需同步更新 `application-mysql.yml`
+- 由 `application-mysql.yml` 管理连接配置
+
+**SQLite 模式（`--spring.profiles.active=sqlite`）：**
+- 无需安装数据库，首次启动自动建表
+- 数据库文件生成在应用根目录的 `video-collect.db`
+- 无需额外配置（连接池限制为 1，避免并发冲突）
+- `updated_at` 通过 MyBatis 拦截器自动注入，MySQL 模式兼容
+
 - 所有注释用中文写（代码规范）
 
 ### 常见问题
 
 #### 数据库连接失败
+
+**MySQL 模式：**
 ```
 java.sql.SQLException: Access denied for user 'root'@'localhost'
 ```
 - 检查 MySQL 是否在 **3307** 端口运行（不是 3306）
-- 检查用户名密码是否与 `application.yml` 一致
+- 检查用户名密码是否与 `application-mysql.yml` 一致
 - 首次使用先执行 `source sql/init.sql`
+
+**SQLite 模式：**
+```
+org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (no such table: ...)
+```
+- 确认使用了 `--spring.profiles.active=sqlite` 参数启动
+- 确认 `src/main/resources/sql/init-sqlite.sql` 在 classpath 中（打包后自动包含）
+- 删除 `video-collect.db` 后重启会自动重建
 
 #### 视频解析失败 / status=3
 - 检查本机是否能访问目标网站
