@@ -95,6 +95,23 @@ videotest/
 
 ---
 
+## 会话摘要 (2026-05-22) — Android 功能更新
+
+### 已完成
+1. **设置页面** — 列表页 TopBar 新增齿轮图标 → `SettingsScreen` 可重新配置 IP/端口 + 测试连接；保存后更新 `RetrofitClient` 并返回。
+2. **播放器修复** — `PlayerActivity` ExoPlayer 添加 `DefaultHttpDataSource` 自定义 User-Agent；HLS 流使用 `HlsMediaSource.Factory`、直链用 `ProgressiveMediaSource.Factory`；空 URL/播放错误显示"无法播放此视频"。
+3. **缓存按钮修复** — `DetailViewModel.startCache()` 增加空 URL 校验 + 错误提示；`cacheError` 状态显示在 `CacheProgressCard` 中；轮询超时(60次×3s)显示"缓存超时，请重试"；等待中显示"等待中…"而非静态文字。
+4. **URL 可复制** — `SourceInfoCard` 的"来源"和"视频"行可点击复制到剪贴板（`LocalClipboardManager` + Toast）。
+5. **`settings.gradle.kts` 修复** — `rootProject.name` 改为 `"video-collect-android"` 避免与父 Maven 项目冲突；`project(":app").projectDir` 指向 `gradle/app` 解决路径问题。
+
+### 关键变更
+- 新增 `ui/settings/SettingsScreen.kt` + `SettingsViewModel.kt`
+- 修改：`MainActivity.kt`（添加 settings 路由）、`ListScreen.kt`（齿轮图标）、`PlayerActivity.kt`（ExoPlayer DataSource）、`DetailScreen.kt`（缓存状态 + 可复制 URL）、`DetailViewModel.kt`（cacheError）
+- 修改：`settings.gradle.kts`（项目名 + app 路径）
+- APK 输出：`android/gradle/app/build/outputs/apk/debug/app-debug.apk`（~20MB）
+
+---
+
 ## 会话摘要 (2026-05-22) — Android APK
 
 ### Android 项目
