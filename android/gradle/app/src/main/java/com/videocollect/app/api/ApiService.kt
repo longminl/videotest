@@ -12,7 +12,9 @@ interface ApiService {
         @Query("page") page: Int = 1,
         @Query("pageSize") pageSize: Int = 20,
         @Query("status") status: Int? = null,
-        @Query("keyword") keyword: String? = null
+        @Query("keyword") keyword: String? = null,
+        @Query("sortBy") sortBy: String? = null,
+        @Query("sortOrder") sortOrder: String? = null
     ): ApiResult<PageResult<VideoRecord>>
 
     @GET("/api/detail/{id}")

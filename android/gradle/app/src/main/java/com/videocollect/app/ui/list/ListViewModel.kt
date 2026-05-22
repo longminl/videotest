@@ -19,7 +19,9 @@ data class ListUiState(
     val keyword: String = "",
     val selectedIds: Set<Long> = emptySet(),
     val isSelectMode: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val sortBy: String = "title",
+    val sortOrder: String = "asc"
 )
 
 class ListViewModel : ViewModel() {
@@ -37,11 +39,15 @@ class ListViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null, currentPage = 1, hasMore = true) }
             try {
+                val sortBy = _uiState.value.sortBy.takeIf { it.isNotBlank() }
+                val sortOrder = _uiState.value.sortOrder.takeIf { it.isNotBlank() }
                 val result = RetrofitClient.getApiService().getVideoList(
                     page = 1,
                     pageSize = pageSize,
                     status = _uiState.value.statusFilter,
-                    keyword = _uiState.value.keyword.ifBlank { null }
+                    keyword = _uiState.value.keyword.ifBlank { null },
+                    sortBy = sortBy,
+                    sortOrder = sortOrder
                 )
                 if (result.isSuccess && result.data != null) {
                     val items = result.data.list
@@ -75,11 +81,15 @@ class ListViewModel : ViewModel() {
             _uiState.update { it.copy(isLoadingMore = true) }
             val nextPage = state.currentPage + 1
             try {
+                val sortBy = state.sortBy.takeIf { it.isNotBlank() }
+                val sortOrder = state.sortOrder.takeIf { it.isNotBlank() }
                 val result = RetrofitClient.getApiService().getVideoList(
                     page = nextPage,
                     pageSize = pageSize,
                     status = state.statusFilter,
-                    keyword = state.keyword.ifBlank { null }
+                    keyword = state.keyword.ifBlank { null },
+                    sortBy = sortBy,
+                    sortOrder = sortOrder
                 )
                 if (result.isSuccess && result.data != null) {
                     val newItems = state.items + result.data.list
@@ -170,5 +180,35 @@ class ListViewModel : ViewModel() {
                 }
             } catch (_: Exception) {}
         }
+    }
+
+    fun setSortBy(sortBy: String) {
+        _uiState.update { it.copy(sortBy = sortBy) }
+        loadData()
+    }
+
+    fun setSortOrder(sortOrder: String) {
+        _uiState.update { it.copy(sortOrder = sortOrder) }
+        loadData()
+    }
+
+    fun cycleSort() {
+        val s = _uiState.value
+        val next = when (s.sortBy to s.sortOrder) {
+            "created_at" to "desc" -> "created_at" to "asc"
+            "created_at" to "asc" -> "title" to "asc"
+            "title" to "asc" -> "title" to "desc"
+            else -> "created_at" to "desc"
+        }
+        _uiState.update { it.copy(sortBy = next.first, sortOrder = next.second) }
+        loadData()
+    }
+
+    fun sortLabel(): String = when (_uiState.value.sortBy to _uiState.value.sortOrder) {
+        "created_at" to "desc" -> "最新"
+        "created_at" to "asc" -> "最早"
+        "title" to "asc" -> "标题A-Z"
+        "title" to "desc" -> "标题Z-A"
+        else -> "排序"
     }
 }

@@ -103,19 +103,34 @@ fun AppNavigation(isConfigured: Boolean) {
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getLong("id") ?: return@composable
             val context = androidx.compose.ui.platform.LocalContext.current
+
+            val playerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+            ) { result ->
+                if (result.resultCode == PlayerActivity.RESULT_GO_TO_LIST) {
+                    navController.popBackStack("list", false)
+                }
+            }
+
             DetailScreen(
                 videoId = id,
                 onBack = { navController.popBackStack() },
                 onPlay = { record ->
                     val baseUrl = RetrofitClient.getBaseUrl()
+                    val items = listViewModel.uiState.value.items
+                    val currentIndex = items.indexOfFirst { it.id == record.id }
+                    val gson = com.google.gson.Gson()
+                    val itemsJson = gson.toJson(items)
                     val intent = PlayerActivity.intent(
                         context = context,
                         videoUrl = record.videoUrl ?: "",
                         title = record.title,
                         isM3u8 = record.isM3u8,
-                        baseUrl = baseUrl
+                        baseUrl = baseUrl,
+                        itemsJson = itemsJson,
+                        currentIndex = if (currentIndex >= 0) currentIndex else 0
                     )
-                    context.startActivity(intent)
+                    playerLauncher.launch(intent)
                 },
                 onDeleted = {
                     listViewModel.refresh()

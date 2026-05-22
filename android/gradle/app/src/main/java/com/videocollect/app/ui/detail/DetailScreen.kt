@@ -169,6 +169,14 @@ private fun VideoInfoCard(record: VideoRecord) {
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("${record.latencyMs}ms", color = TextTertiary, fontSize = 13.sp)
                 }
+                if (record.cacheSize != null && record.cacheSize != "-"
+                    && record.cacheSize != "0 B") {
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Icon(Icons.Default.Storage, contentDescription = null,
+                        modifier = Modifier.size(16.dp), tint = TextTertiary)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(record.cacheSize, color = TextTertiary, fontSize = 13.sp)
+                }
                 if (record.isM3u8) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Surface(shape = RoundedCornerShape(6.dp), color = Blue100) {

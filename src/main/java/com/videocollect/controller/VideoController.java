@@ -58,10 +58,12 @@ public class VideoController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) Integer status,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortOrder) {
 
         int offset = (page - 1) * pageSize;
-        java.util.List<VideoRecord> list = videoRecordDao.findPage(offset, pageSize, status, keyword);
+        java.util.List<VideoRecord> list = videoRecordDao.findPage(offset, pageSize, status, keyword, sortBy, sortOrder);
         for (VideoRecord r : list) {
             r.setCacheSize(hlsCacheService.getCacheSizeText(r.getTitle()));
         }

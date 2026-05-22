@@ -57,7 +57,15 @@
                 OR video_url LIKE CONCAT('%', #{keyword}, '%'))
             </if>
         </where>
-        ORDER BY created_at DESC
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'title'">title</when>
+            <otherwise>created_at</otherwise>
+        </choose>
+        <choose>
+            <when test="sortOrder == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
         LIMIT #{limit} OFFSET #{offset}
     </select>
 

@@ -7,6 +7,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,7 +33,7 @@ import com.videocollect.app.api.models.VideoRecord
 import com.videocollect.app.ui.theme.*
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun ListScreen(
     viewModel: ListViewModel,
@@ -166,7 +170,7 @@ fun ListScreen(
                 )
             }
 
-            // Status filter chips
+            // Status filter + sort chips
             if (!uiState.isSelectMode) {
                 Row(
                     modifier = Modifier
@@ -195,11 +199,31 @@ fun ListScreen(
                         colors = chipColors(uiState.statusFilter == 3),
                         border = null
                     )
+                    Spacer(modifier = Modifier.weight(1f))
+                    FilterChip(
+                        selected = false,
+                        onClick = { viewModel.cycleSort() },
+                        label = { Text(viewModel.sortLabel(), fontSize = 13.sp) },
+                        colors = chipColors(selected = false),
+                        border = null,
+                        leadingIcon = {
+                            Icon(Icons.Default.SwapVert, contentDescription = null,
+                                modifier = Modifier.size(14.dp), tint = TextSecondary)
+                        }
+                    )
                 }
             }
 
-            // Content
-            Box(modifier = Modifier.fillMaxSize()) {
+            // Content with pull-to-refresh
+            val pullRefreshState = rememberPullRefreshState(
+                refreshing = uiState.isRefreshing,
+                onRefresh = { viewModel.refresh() }
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pullRefresh(pullRefreshState)
+            ) {
                 when {
                     uiState.isLoading && uiState.items.isEmpty() -> {
                         Column(
@@ -232,7 +256,9 @@ fun ListScreen(
 
                     uiState.items.isEmpty() -> {
                         Column(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
@@ -290,16 +316,16 @@ fun ListScreen(
                                 }
                             }
                         }
-
-                        // Pull-to-refresh indicator
-                        if (uiState.isRefreshing) {
-                            LinearProgressIndicator(
-                                modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
-                                color = Blue400
-                            )
-                        }
                     }
                 }
+
+                PullRefreshIndicator(
+                    refreshing = uiState.isRefreshing,
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    backgroundColor = SurfaceWhite,
+                    contentColor = Blue600
+                )
             }
         }
     }
@@ -383,6 +409,13 @@ private fun VideoCard(
                             text = " · HLS",
                             fontSize = 12.sp,
                             color = StatusBlue
+                        )
+                    }
+                    if (record.cacheSize != null && record.cacheSize != "-") {
+                        Text(
+                            text = " · ${record.cacheSize}",
+                            fontSize = 12.sp,
+                            color = TextTertiary
                         )
                     }
                 }

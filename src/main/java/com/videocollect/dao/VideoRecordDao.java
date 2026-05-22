@@ -28,7 +28,9 @@ public interface VideoRecordDao {
     List<VideoRecord> findPage(@Param("offset") int offset,
                                @Param("limit") int limit,
                                @Param("status") Integer status,
-                               @Param("keyword") String keyword);
+                               @Param("keyword") String keyword,
+                               @Param("sortBy") String sortBy,
+                               @Param("sortOrder") String sortOrder);
 
     /** 查询总数 */
     long count(@Param("status") Integer status,

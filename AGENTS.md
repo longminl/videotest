@@ -159,3 +159,36 @@ Set-Location "D:\opencode\videotest\android"
 ### 已知问题
 - Gradle wrapper 国内无法验证 `services.gradle.org`，只能用已解压的 Gradle 直接构建
 - 国内网络下，下载 SDK cmdline-tools 需要用 USTC 等镜像，或用户手动提供 zip
+
+---
+
+## 会话摘要 (2026-05-22) — PlayerActivity 大幅重构
+
+### 已完成
+1. **PlayerActivity 全功能重写** — 播放器实例用 `remember{}` 创建一次，`LaunchedEffect(currentVideoIndex)` 切换 MediaSource；支持 prev/next 导航、进度条+缓冲区指示、skip -10s/+10s
+2. **Pinch-to-zoom (1x~4x)** — `graphicsLayer` + `detectTransformGestures`；双击重置缩放；`detectTapGestures` 开关控制栏
+3. **方向切换** — 按钮循环：`SENSOR_LANDSCAPE → USER_PORTRAIT → SENSOR`；横屏自动沉浸模式
+4. **Prev/Next/List 导航** — TopBar ⏮/⏭；"列表"按钮用 `setResult + finish` → `ActivityResultLauncher` → `popBackStack("list")`；`MainActivity` 传入 items JSON + currentIndex
+5. **缓存按钮 + 5s 轮询** — HLS 视频显示 ☁ 按钮；`LaunchedEffect` 每 5s 轮询 `/api/cache/status` 显示进度/大小；切换视频自动重置
+6. **列表排序** — 后端 `findPage()` 接收 `sortBy`/`sortOrder`，MyBatis `<choose>` 白名单；Android `cycleSort()` 循环 最新→最早→A-Z→Z-A；默认按标题 A-Z
+7. **下拉刷新** — ListScreen 用 Material1 `pullRefresh` modifier + `PullRefreshIndicator`；空状态 + 错误状态也支持下拉
+8. **缓存大小展示** — ListScreen `VideoCard` 和 DetailScreen `VideoInfoCard` 均显示缓存大小
+9. **默认横屏** — PlayerActivity `onCreate` 设置 `SCREEN_ORIENTATION_SENSOR_LANDSCAPE`
+
+### 关键变更
+- `PlayerActivity.kt` — 完整重写：`remember{}` 播放器、progress+seekbar、zoom、orientation、nav、cache polling
+- `MainActivity.kt` — ActivityResultLauncher 处理播放器返回 → 回到列表路由；`getLaunchIntentForPackage` 移除
+- `ListScreen.kt` — sort chip（循环切换）+ pull-to-refresh（`pullRefresh`）+ VideoCard 缓存大小
+- `ListViewModel.kt` — `sortBy`/`sortOrder` 状态、`cycleSort()`、`sortLabel()`；默认 `title`/`asc`
+- `DetailScreen.kt` — VideoInfoCard 缓存大小（📦+格式化字节）；移除 SourceInfoCard 中的缓存行
+- `ApiService.kt` — `getVideoList()` 增加 `sortBy?`/`sortOrder?` 参数
+- `build.gradle.kts` — 添加 `material:material` 依赖（pull-to-refresh）
+- `VideoRecordDao.java` + `VideoRecordMapper.xml` + `VideoController.java` — 新增 `sortBy`/`sortOrder` 参数
+- `AGENTS.md` — 更新摘要
+
+### 技术要点
+- `ExperimentalMaterialApi` 需显式 `@OptIn` + `import androidx.compose.material.ExperimentalMaterialApi`
+- `scrollState` 用于手势缩放同步（不直接用 `transformable`）
+- `detectTransformGestures` 和 `detectTapGestures` 分两层避免冲突
+- `ACCOMPANIST_INSETS` 弃用警告已排查，当前仅用系统 `windowInsets`
+- ListScreen 分页通过 `LazyColumn` + `LaunchedEffect` 检测底部触发加载更多
