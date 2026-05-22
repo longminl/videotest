@@ -257,3 +257,110 @@ mvn clean package -DskipTests
 # 停止旧进程（Ctrl+C），然后
 java -jar target/video-collect-1.0.0.jar
 ```
+
+---
+
+## 8. Android 客户端
+
+Android 原生客户端（Kotlin + Jetpack Compose），通过 REST API 与后端通信，支持在同一局域网内浏览、播放和缓存视频。
+
+### 技术栈
+
+| 组件 | 版本 |
+|------|------|
+| Kotlin | 1.9.22 |
+| Jetpack Compose + Material3 | BOM 2024.02.00 |
+| ExoPlayer (Media3) | 1.3.1 |
+| Retrofit | 2.9.0 |
+| Navigation Compose | 2.7.7 |
+| Gradle | 8.6 |
+
+### 前置条件
+
+| 资源 | 说明 |
+|------|------|
+| JDK 17+ | 构建 Android 需要 Java 17 以上（推荐 JDK 21） |
+| Android SDK | platform 35 + build-tools 34/35 |
+| Gradle 8.6+ | 国内网络无法验证 `services.gradle.org`，建议使用已解压的本地 Gradle 直接构建 |
+
+### 构建 APK
+
+```powershell
+# 设置环境变量
+$env:JAVA_HOME = "C:\jdk-21.0.11+10"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+$env:ANDROID_SDK_ROOT = "D:\opencode\android-sdk"
+
+# 用已解压的 Gradle 直接构建
+$gradleHome = "C:\Users\63281\AppData\Local\Temp\gradle-extract\gradle-8.6"
+& "$gradleHome\bin\gradle.bat" -p "android" assembleDebug --no-daemon
+
+# APK 输出路径
+# android/gradle/app/build/outputs/apk/debug/app-debug.apk (~20MB)
+```
+
+### 页面功能
+
+| 页面 | 路由 | 功能 |
+|------|------|------|
+| 服务器配置 | `server_config` | 首次启动或从设置页配置服务器 IP:端口，支持测试连接 |
+| 视频列表 | `list` | 视频卡片列表 + 下拉刷新 + 分页加载 + 排序切换 + 搜索筛选 + 多选删除 |
+| 添加视频 | `add` | 输入 URL 收藏新视频 |
+| 视频详情 | `detail/{id}` | ExoPlayer 播放 + 备注编辑 + 缓存状态 + URL 复制 |
+| 全屏播放器 | （独立 Activity） | 全屏横屏播放，完整播放控制 |
+
+### 列表页操作
+
+- **排序**：顶部芯片循环切换 `最新→最早→标题A-Z→标题Z-A`（默认 A-Z）
+- **下拉刷新**：任意状态（含空列表和加载失败）下拉即可刷新
+- **加载更多**：滚动到底部自动加载下一页
+- **搜索**：输入关键词实时过滤标题
+- **筛选**：按状态（全部/可播放/不可播放/解析失败）过滤
+- **多选删除**：长按任意卡片进入选择模式 → 勾选视频 → 顶部垃圾桶按钮批量删除
+- **缓存大小**：每张卡片右下方显示已缓存的数据量（如 `3.2 MB`）
+
+### 详情页
+
+- **播放器**：顶部内嵌 ExoPlayer，播放前显示视频信息
+  - HLS 流（.m3u8）走 `/proxy/m3u8` 代理
+  - 直链（.mp4）直接播放
+  - 空 URL 或播放错误显示"无法播放此视频"
+- **缓存状态**：显示缓存进度（等待中.../缓存中.../已缓存/超时错误）
+- **URL 复制**："来源"和"视频"行点击即可复制到剪贴板
+- **全屏播放**：点击"全屏播放"按钮进入 PlayerActivity
+
+### 全屏播放器（PlayerActivity）
+
+- **导航**：顶栏 `⏮` / `⏭` 切换上下视频；"列表"按钮返回列表页
+- **进度控制**：底部进度条 + 缓冲区指示 + `-10s` / `+10s` 按钮
+- **倍速**：0.5x ~ 4x 循环切换
+- **手势缩放**：双指 pinch-to-zoom（1x~4x），双击重置
+- **方向切换**：按钮循环 `强制横屏 → 竖屏 → 自动旋转`
+- **缓存加速**：HLS 视频显示 `☁` 按钮，点击开始预缓存 → 实时显示进度和大小
+- **默认横屏**：进入播放器自动横屏沉浸播放
+
+### 项目结构
+
+```
+android/
+├── settings.gradle.kts          # 项目配置（rootProject.name + app 路径）
+├── build.gradle.kts             # 顶层构建脚本
+├── gradle/
+│   ├── libs.versions.toml       # 版本目录（BOM、ExoPlayer、Retrofit 等）
+│   └── app/                     # App 模块
+│       ├── build.gradle.kts
+│       └── src/main/java/com/videocollect/app/
+│           ├── MainActivity.kt            # 主入口 + NavHost + 播放器返回处理
+│           ├── retrofit/
+│           │   ├── RetrofitClient.kt      # Retrofit 单例（支持重新配置 Base URL）
+│           │   └── ApiService.kt          # REST API 接口定义
+│           ├── api/models/
+│           │   └── VideoRecord.kt         # 数据模型
+│           └── ui/
+│               ├── theme/Theme.kt         # 蓝白主题 + 暗黑模式
+│               ├── serverconfig/          # 服务器配置页
+│               ├── list/                  # 列表页（ListScreen + ListViewModel + VideoCard）
+│               ├── add/                   # 添加视频页
+│               ├── detail/                # 详情页（DetailScreen + DetailViewModel + 组件）
+│               └── player/               # 全屏播放器（PlayerActivity 独立 Activity）
+```
