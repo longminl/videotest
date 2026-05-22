@@ -51,10 +51,11 @@
                 AND status = #{status}
             </if>
             <if test="keyword != null and keyword != ''">
-                AND (title LIKE CONCAT('%', #{keyword}, '%')
-                OR page_title LIKE CONCAT('%', #{keyword}, '%')
-                OR source_url LIKE CONCAT('%', #{keyword}, '%')
-                OR video_url LIKE CONCAT('%', #{keyword}, '%'))
+                <bind name="likePattern" value="'%' + keyword + '%'"/>
+                AND (title LIKE #{likePattern}
+                OR page_title LIKE #{likePattern}
+                OR source_url LIKE #{likePattern}
+                OR video_url LIKE #{likePattern})
             </if>
         </where>
         ORDER BY
@@ -76,34 +77,35 @@
                 AND status = #{status}
             </if>
             <if test="keyword != null and keyword != ''">
-                AND (title LIKE CONCAT('%', #{keyword}, '%')
-                OR page_title LIKE CONCAT('%', #{keyword}, '%')
-                OR source_url LIKE CONCAT('%', #{keyword}, '%')
-                OR video_url LIKE CONCAT('%', #{keyword}, '%'))
+                <bind name="likePattern" value="'%' + keyword + '%'"/>
+                AND (title LIKE #{likePattern}
+                OR page_title LIKE #{likePattern}
+                OR source_url LIKE #{likePattern}
+                OR video_url LIKE #{likePattern})
             </if>
         </where>
     </select>
 
     <update id="updateStatus">
         UPDATE video_collection
-        SET status = #{status}, latency_ms = #{latencyMs}, remark = #{remark}
+        SET status = #{status}, latency_ms = #{latencyMs}, remark = #{remark}, updated_at = #{updatedAt}
         WHERE id = #{id}
     </update>
 
     <update id="updateRemark">
-        UPDATE video_collection SET remark = #{remark} WHERE id = #{id}
+        UPDATE video_collection SET remark = #{remark}, updated_at = #{updatedAt} WHERE id = #{id}
     </update>
 
     <update id="updateVideoUrl">
-        UPDATE video_collection SET video_url = #{videoUrl} WHERE id = #{id}
+        UPDATE video_collection SET video_url = #{videoUrl}, updated_at = #{updatedAt} WHERE id = #{id}
     </update>
 
     <update id="updatePageTitle">
-        UPDATE video_collection SET page_title = #{pageTitle} WHERE id = #{id}
+        UPDATE video_collection SET page_title = #{pageTitle}, updated_at = #{updatedAt} WHERE id = #{id}
     </update>
 
     <update id="updateIsCached">
-        UPDATE video_collection SET is_cached = #{isCached} WHERE id = #{id}
+        UPDATE video_collection SET is_cached = #{isCached}, updated_at = #{updatedAt} WHERE id = #{id}
     </update>
 
     <delete id="deleteById">

@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:${user.dir}/video-collect.db
+    driver-class-name: org.sqlite.JDBC
+    username:
+    password:
+  sql:
+    init:
+      mode: always
+      schema: classpath:sql/init-sqlite.sql
