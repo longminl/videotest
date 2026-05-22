@@ -17,3 +17,6 @@ video-collect-1.0.0.jar
 # 运行时日志
 *.log
 *.err
+
+# SQLite 数据库文件（运行时生成）
+*.db
