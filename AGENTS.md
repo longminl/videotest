@@ -92,3 +92,53 @@ videotest/
 - `VideoController.java` — delete() 注入 HlsCacheService，删除时清缓存
 - `index.html` — 蓝白色调 + 列重排 + sticky 操作列 + 移动端跳过轮询 + 20s 自动重试
 - `detail.html` — 蓝白色调 + 移动端跳过缓存轮询 + 修复 downloadVideo 语法错误
+
+---
+
+## 会话摘要 (2026-05-22) — Android APK
+
+### Android 项目
+- **项目目录**：`videotest/android/` — 独立 Gradle 项目，与后端代码无关
+- **技术栈**：Kotlin + Jetpack Compose + Material3 + Retrofit + ExoPlayer + Navigation Compose
+- **最低 SDK**：API 26（Android 8.0），目标 SDK：35（Android 15）
+- **主题**：蓝白配色（#2563EB 主色 + #06B6D4 Cyan 强调色），支持暗黑模式
+
+### Android APK 构建前置条件
+
+| 资源 | 本地路径 | 说明 |
+|------|----------|------|
+| JDK 21 | `C:\jdk-21.0.11+10` | 构建 Android 需要 Java 17+ |
+| Android 命令行工具 | `D:\opencode\commandlinetools-win-11076708_latest.zip` | 已解压到 `D:\opencode\android-sdk\cmdline-tools\latest\` |
+| Android SDK | `D:\opencode\android-sdk` | 已安装 platform 35 + build-tools 34/35 + platform-tools |
+| Gradle 8.6 | `D:\opencode\gradle-8.6-bin.zip` | 已解压到 `C:\Users\63281\AppData\Local\Temp\gradle-extract\gradle-8.6\` |
+
+### 构建命令
+
+```powershell
+# 设置环境变量
+$env:JAVA_HOME = "C:\jdk-21.0.11+10"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+$env:ANDROID_SDK_ROOT = "D:\opencode\android-sdk"
+
+# 用已解压的 Gradle 直接构建
+$gradleHome = "C:\Users\63281\AppData\Local\Temp\gradle-extract\gradle-8.6"
+Set-Location "D:\opencode\videotest\android"
+& "$gradleHome\bin\gradle.bat" assembleDebug --no-daemon
+
+# APK 输出路径
+# android\app\build\outputs\apk\debug\app-debug.apk
+```
+
+### Android App 页面
+
+| 页面 | 路由 | 功能 |
+|------|------|------|
+| ServerConfigScreen | `server_config` | 首次启动配置服务器 IP:端口 |
+| ListScreen | `list` | 视频列表 + 下拉刷新 + 分页 + 筛选 + 多选删除 |
+| AddVideoScreen | `add` | 输入 URL 收藏新视频 |
+| DetailScreen | `detail/{id}` | 详情 + ExoPlayer 播放 + 备注编辑 + 缓存进度 |
+| PlayerActivity | （独立 Activity） | ExoPlayer 全屏播放（倍速 0.5x~4x） |
+
+### 已知问题
+- Gradle wrapper 国内无法验证 `services.gradle.org`，只能用已解压的 Gradle 直接构建
+- 国内网络下，下载 SDK cmdline-tools 需要用 USTC 等镜像，或用户手动提供 zip

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VideoCollect</string>
+    <string name="server_config_title">配置服务器</string>
+    <string name="list_title">视频收藏</string>
+    <string name="add_title">收藏视频</string>
+</resources>

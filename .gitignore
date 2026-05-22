@@ -7,6 +7,9 @@ hls-cache/
 
 # 构建产物
 target/
+android/.gradle/
+android/gradle/app/build/
+android/local.properties
 
 # yt-dlp 可执行文件（需手动下载）
 
