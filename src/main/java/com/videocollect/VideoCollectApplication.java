@@ -14,6 +14,8 @@ public class VideoCollectApplication {
         System.out.println("======================================================");
         System.out.println("  视频收藏工具已启动");
         System.out.println("  访问地址: http://localhost:8080");
+        System.out.println("  访问视频源管理页地址: http://localhost:8080/sources");
+
         System.out.println("======================================================");
     }
 }
