@@ -135,6 +135,11 @@ private fun ColumnScope.SearchStep(uiState: GlobalSearchUiState, viewModel: Glob
         }
     }
 
+    // 搜索错误提示
+    if (uiState.searchError != null) {
+        Text(uiState.searchError ?: "", color = StatusRed, fontSize = 13.sp)
+    }
+
     Spacer(modifier = Modifier.weight(1f))
 
     // Search button

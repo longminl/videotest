@@ -34,6 +34,7 @@ fun SourceScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    var showImportDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -75,12 +76,7 @@ fun SourceScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(
-                    onClick = {
-                        // Import from JSON using a simple file picker simulation
-                        // On Android, we'd use ActivityResultContracts, but for simplicity
-                        // we show a dialog to paste JSON
-                        showImportDialog(context, viewModel)
-                    },
+                    onClick = { showImportDialog = true },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp),
                     border = BorderStroke(1.dp, StatusGreen)
@@ -160,11 +156,25 @@ fun SourceScreen(
         )
     }
 
-    // Export data - show as Toast
+    // Import dialog
+    if (showImportDialog) {
+        ImportJsonDialog(
+            onDismiss = { showImportDialog = false },
+            onImport = { sources ->
+                viewModel.importSources(sources)
+                showImportDialog = false
+            }
+        )
+    }
+
+    // Export data - copy to clipboard
     LaunchedEffect(uiState.exportData) {
         uiState.exportData?.let { data ->
             val json = Gson().toJson(data)
-            Toast.makeText(context, "导出完成: ${data.size} 条", Toast.LENGTH_LONG).show()
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("video_sources_export", json)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(context, "导出 ${data.size} 条视频源，JSON 已复制到剪贴板", Toast.LENGTH_LONG).show()
             viewModel.loadSources()
         }
     }
@@ -439,13 +449,6 @@ private fun SourceEditDialog(
 }
 
 // ===== Import Dialog =====
-
-private fun showImportDialog(context: Context, viewModel: SourceViewModel) {
-    val gson = Gson()
-    // Simple text input dialog via AlertDialog built with Compose
-    // For simplicity, create a composable-based approach
-    viewModel.importSources(emptyList()) // placeholder - implement JSON paste
-}
 
 @Composable
 fun ImportJsonDialog(

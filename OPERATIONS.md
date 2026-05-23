@@ -210,3 +210,88 @@ taskkill /PID <PID> /F
 # 启动新版本
 java -jar target/video-collect-1.0.0.jar
 ```
+
+---
+
+## 2026-05-23 更新：Android 客户端 + 搜索修复
+
+### Android 项目概述
+
+Android 客户端位于 `android/` 目录，与后端代码完全独立。
+- **技术栈**：Kotlin + Jetpack Compose + Material3 + Retrofit + ExoPlayer + Navigation Compose
+- **最低 SDK**：API 26（Android 8.0），目标 SDK：35（Android 15）
+- **主题**：蓝白配色（#2563EB 主色 + #06B6D4 Cyan 强调色），支持暗黑模式
+
+### Android APK 构建
+
+#### 前置条件
+
+| 资源 | 本地路径 | 说明 |
+|------|----------|------|
+| JDK 21 | `C:\jdk-21.0.11+10` | 构建 Android 需要 Java 17+ |
+| Android 命令行工具 | `D:\opencode\commandlinetools-win-11076708_latest.zip` | 已解压到 `D:\opencode\android-sdk\cmdline-tools\latest\` |
+| Android SDK | `D:\opencode\android-sdk` | 已安装 platform 35 + build-tools 34/35 + platform-tools |
+| Gradle 8.6 | `D:\opencode\gradle-8.6-bin.zip` | 已解压到 `C:\Users\63281\AppData\Local\Temp\gradle-extract\gradle-8.6\` |
+
+#### 构建命令
+
+```powershell
+$env:JAVA_HOME = "C:\jdk-21.0.11+10"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+$env:ANDROID_SDK_ROOT = "D:\opencode\android-sdk"
+$gradleHome = "C:\Users\63281\AppData\Local\Temp\gradle-extract\gradle-8.6"
+Set-Location "D:\opencode\videotest\android"
+& "$gradleHome\bin\gradle.bat" assembleDebug --no-daemon
+```
+
+APK 输出：`android/gradle/app/build/outputs/apk/debug/app-debug.apk`
+
+### Android App 页面
+
+| 页面 | 路由 | 功能 |
+|------|------|------|
+| ServerConfigScreen | `server_config` | 首次启动配置服务器 IP:端口 |
+| ListScreen | `list` | 视频列表 + 下拉刷新 + 分页 + 筛选 + 多选删除 + 合集筛选 + 批量移动到合集 |
+| AddVideoScreen | `add` | 输入 URL 收藏新视频 |
+| DetailScreen | `detail/{id}` | 详情 + ExoPlayer 播放 + 备注编辑 + 缓存进度 + 合集操作 + 下集检测 |
+| PlayerActivity | （独立 Activity） | ExoPlayer 全屏播放（倍速 0.5x~4x、手势缩放、prev/next 导航） |
+| GlobalSearchScreen | `search` | 4 步搜索导入向导 |
+| SourceScreen | `sources` | 视频源 CRUD + 测试搜索/解析 + 导出（复制 JSON 到剪贴板）+ 导入 JSON |
+| SettingsScreen | `settings` | 重新配置服务器 IP/端口 + 测试连接 |
+
+### 变更内容
+
+#### Bug 修复
+1. **Android 搜索无结果** — Gson 对 `Map<Long, SourceSearchResult>` 复杂嵌套泛型的反序列化因 Kotlin 类型擦除失败（`LinkedTreeMap cannot be cast to SourceSearchResult`），异常被 `catch` 吞掉写入 `searchError`，但 SearchStep 从未显示 `searchError`。
+   - 修复：`ApiService.kt` 返回类型改为 `ApiResult<Map<String, Any>>`
+   - `GlobalSearchViewModel.kt` 手动用 `gson.toJsonTree()` + `gson.fromJson()` 逐源解析
+   - `GlobalSearchScreen.kt` 搜索按钮上方添加 `searchError` 红色错误提示
+2. **SourceScreen 导入按钮无效** — `showImportDialog()` 是空壳占位，永远导入 `emptyList()`。`ImportJsonDialog` 组件存在但从未被调用。
+   - 修复：改用状态变量控制 `ImportJsonDialog` 弹出，粘贴 JSON 解析导入
+3. **SourceScreen 导出不完整** — 导出成功仅弹 Toast 显示数量，未提供 JSON。
+   - 修复：导出后 JSON 复制到系统剪贴板（`ClipboardManager.setPrimaryClip`）
+4. **编译错误修复** — `codemap.md` 文件误放入 `res/` 目录导致资源合并失败；`ColumnScope` 导致 `Modifier.weight()` 引用错误；`VideoGroup`/`VideoSource`/`VideoRecord` 构造器参数不完整；`PlayerActivity` 构造器遗漏新字段；`ListScreen.kt` clickable lambda 语法错误。
+
+#### 新增功能
+5. **Android 视频源管理** — `SourceScreen` + `SourceViewModel`：列表展示、新增/编辑弹窗、一键测试搜索和集数解析、导出 JSON 到剪贴板、粘贴 JSON 导入
+6. **Android 全局搜索** — `GlobalSearchScreen` + `GlobalSearchViewModel`：选择视频源 → 输入关键词搜索 → 结果分组展示 → 选择剧集 → 新建或选合集 → 批量导入
+7. **Android 合集管理** — ListScreen 支持合集筛选 FilterChip 和批量移动到合集；DetailScreen 支持移动到合集/移出合集和下集检测/一键导入
+8. **Android 详情页增强** — VideoInfoCard 展示合集名称 + 集数；ActionButtons 增加"合集"/"下集"按钮；NextEpisodeCard 下集检测结果卡片
+
+### 操作步骤
+
+无后端变更，Android 端需要重新构建 APK：
+
+```powershell
+$env:JAVA_HOME = "C:\jdk-21.0.11+10"
+$env:ANDROID_SDK_ROOT = "D:\opencode\android-sdk"
+& "D:\opencode\gradle-8.6-extracted\gradle-8.6\bin\gradle.bat" assembleDebug --no-daemon -p "D:\opencode\videotest\android"
+```
+
+安装 APK 到手机后，首次启动会要求配置服务器 IP 和端口。
+
+### 已知问题
+
+- Gradle wrapper 国内无法验证 `services.gradle.org`，只能直接用已解压的 Gradle
+- Android Gradle Plugin 8.3.0 对 compileSdk=35 有警告，不影响运行（如需消除，在 `gradle.properties` 加 `android.suppressUnsupportedCompileSdk=35`）
+- 国内网络下 Android SDK cmdline-tools 下载需用 USTC 等镜像

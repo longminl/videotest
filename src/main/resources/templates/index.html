@@ -921,10 +921,17 @@
             .then(res => {
                 if (res.code === 200 && res.data) {
                     var sel = document.getElementById('groupFilter');
+                    // 清除之前动态添加的 option（保留前2个静态：全部合集、无合集）
+                    while (sel.options.length > 2) {
+                        sel.remove(sel.options.length - 1);
+                    }
                     groupMap = {};
                     res.data.forEach(function(g) {
                         groupMap[g.id] = { name: g.name, videoCount: g.videoCount || 0 };
-                        sel.innerHTML += '<option value="' + g.id + '">' + escapeHtml(g.name) + ' (' + (g.videoCount||0) + ')</option>';
+                        var opt = document.createElement('option');
+                        opt.value = g.id;
+                        opt.textContent = g.name + ' (' + (g.videoCount||0) + ')';
+                        sel.appendChild(opt);
                     });
                     if (currentGroupFilter) sel.value = currentGroupFilter;
                 }

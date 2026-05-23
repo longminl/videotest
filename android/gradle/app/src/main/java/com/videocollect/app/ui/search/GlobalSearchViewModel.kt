@@ -3,6 +3,7 @@ package com.videocollect.app.ui.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.videocollect.app.api.RetrofitClient
+import com.google.gson.Gson
 import com.videocollect.app.api.models.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -108,11 +109,22 @@ class GlobalSearchViewModel : ViewModel() {
                 val body = mapOf<String, Any>("keyword" to keyword, "sourceIds" to sourceIds)
                 val result = RetrofitClient.getApiService().searchAllEpisodes(body)
                 if (result.isSuccess && result.data != null) {
+                    // 手动解析原始 Map，避免 Gson 复杂泛型类型擦除问题
+                    val parsed: MutableMap<Long, List<SearchResultItem>> = LinkedHashMap()
+                    val gson = Gson()
+                    for ((key, value) in result.data) {
+                        val sid = key.toLongOrNull() ?: continue
+                        val raw = gson.toJsonTree(value)
+                        try {
+                            val sr = gson.fromJson(raw, SourceSearchResult::class.java)
+                            parsed[sid] = sr.results ?: emptyList()
+                        } catch (_: Exception) {
+                            // 单个源解析失败不影响其他源
+                        }
+                    }
                     _uiState.update {
                         it.copy(
-                            searchResults = result.data.mapValues { entry ->
-                                entry.value.results ?: emptyList()
-                            },
+                            searchResults = parsed,
                             isSearching = false,
                             step = 2
                         )
