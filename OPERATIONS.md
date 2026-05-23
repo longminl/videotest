@@ -295,3 +295,55 @@ $env:ANDROID_SDK_ROOT = "D:\opencode\android-sdk"
 - Gradle wrapper 国内无法验证 `services.gradle.org`，只能直接用已解压的 Gradle
 - Android Gradle Plugin 8.3.0 对 compileSdk=35 有警告，不影响运行（如需消除，在 `gradle.properties` 加 `android.suppressUnsupportedCompileSdk=35`）
 - 国内网络下 Android SDK cmdline-tools 下载需用 USTC 等镜像
+
+---
+
+## 2026-05-23 更新：Android 逐个源轮询搜索 + 合集管理弹窗
+
+### 变更内容
+
+#### Bug 修复
+1. **Android sourceIds 过滤不生效** — `search()` 用 `mapOf<String, Any>("sourceIds" to sourceIds)` 构造请求体，`Any` 类型擦除导致 Gson 序列化 `List<Long>` 丢失类型信息，后端收到的 `sourceIds` 为 null 回退到 `findAll()`。
+   - **根因**：Gson 无法从 `Map<String, Any>` 推断 `List<Long>` 的泛型类型，运行时当普通 Object 处理。
+   - **修复**：新建 `SearchRequest(keyword, sourceIds)` 数据类（`EpisodeModels.kt`），`ApiService.searchAllEpisodes(@Body body: SearchRequest)` 用具体类型携带泛型信息，Gson 正确序列化为 `{"sourceIds":[1]}`。
+2. **VideoChecker HEAD 超时直接判定失败** — HEAD 请求超时（3s→5s）后被固定返回 `status=2`，未尝试 GET 嗅探兜底。
+   - **修复**：`SocketTimeoutException` 时尝试 `sniffIsM3u8()`，成功则标记可播放。
+   - 非视频扩展名的 HTTP 非2xx 响应也追加 GET 嗅探兜底。
+
+#### 新功能
+3. **Android 逐个源轮询搜索** — 替代原先一次 POST 后端搜全源的方案：
+   - `search()` 重写：遍历 `selectedSourceIds`，逐个调 `POST /api/episode/search-source`（单源搜索）
+   - 每源 20s 超时（`withTimeout(20000L)`），超时标记 `⚠️ 超时` 并跳过
+   - 搜索中顶部显示 `LinearProgressIndicator` + `"正在搜索 (已完成 2/4)"`
+   - 结果实时追加到界面，边搜边看
+   - 后端 `connectTimeout 10s→20s`（`RetrofitClient.kt`）
+   - 新增状态字段：`searchProgressText`、`searchSourceErrors: Map<Long, String>`
+4. **Android 合集管理弹窗** — 合集筛选栏底部新增 ⚙ 管理按钮：
+   - 展示所有合集（名称 + 视频数）
+   - 每合集支持重命名（弹窗输入新名称）和删除（确认弹窗，视频保留）
+   - 底部输入框 + "新建"按钮创建合集
+5. **合集筛选栏始终显示** — 即使 `groups` 为空也显示 `全部视频` chip + ⚙ 按钮，给用户创建合集的入口。
+6. **后端日志** — `EpisodeController.searchAll()` 和 `EpisodeSearchService.searchAll()` 新增 `sourceIds`、`filterActive`、`sourcesCount` 日志，方便排查。
+
+#### 配置文件更新
+7. **application.yml** — `czltnl` 源模板更正为 `https://www.czltnl.com`，searchUrl 改为 `/search/-------------.html?wd={keyword}`。
+
+### 操作步骤
+
+无数据库变更，无需重建后端。Android 端需重新构建 APK：
+
+```powershell
+$env:JAVA_HOME = "C:\jdk-21.0.11+10"
+$env:ANDROID_SDK_ROOT = "D:\opencode\android-sdk"
+$gradleHome = "C:\Users\63281\AppData\Local\Temp\gradle8.6\gradle-8.6"
+Set-Location "D:\opencode\videotest\android"
+& "$gradleHome\bin\gradle.bat" assembleDebug --no-daemon
+```
+
+APK：`android/gradle/app/build/outputs/apk/debug/app-debug.apk`
+
+后端如重新部署也需要重新打包（仅日志变更，不影响功能）：
+
+```bash
+mvn clean package && java -jar target/video-collect-1.0.0.jar
+```
