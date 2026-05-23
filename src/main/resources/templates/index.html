@@ -196,10 +196,12 @@
         .table-card tbody td:nth-child(7) { min-width: 50px; }
         .table-card thead th:nth-child(8),
         .table-card tbody td:nth-child(8) { min-width: 60px; }
-        .table-card thead th:nth-child(10),
-        .table-card tbody td:nth-child(10) { min-width: 120px; }
+        .table-card thead th:nth-child(9),
+        .table-card tbody td:nth-child(9) { min-width: 55px; }
         .table-card thead th:nth-child(11),
-        .table-card tbody td:nth-child(11) { min-width: 80px; white-space: nowrap; }
+        .table-card tbody td:nth-child(11) { min-width: 120px; }
+        .table-card thead th:nth-child(12),
+        .table-card tbody td:nth-child(12) { min-width: 80px; white-space: nowrap; }
 
         .url-text, .url-link {
             max-width: 260px;
@@ -248,7 +250,8 @@
         .status-3 .sd { background: #ca8a04; }
 
         /* 操作按钮 */
-        .action-group { display: flex; gap: 4px; flex-wrap: wrap; }
+        .action-group { display: flex; flex-wrap: wrap; gap: 4px; }
+        .action-group .btn-action { flex: 0 0 calc(50% - 2px); box-sizing: border-box; text-align: center; }
         .btn-action {
             background: transparent;
             border: 1px solid #e2e8f0;
@@ -408,17 +411,17 @@
             .pagination-custom { flex-direction: column; gap: 8px; align-items: center; }
             .page-info { font-size: 12px; }
             /* 操作列悬浮跟随滚动 */
-            .table-card thead th:nth-child(10),
-            .table-card tbody td:nth-child(10) {
+            .table-card thead th:nth-child(11),
+            .table-card tbody td:nth-child(11) {
                 position: sticky;
                 right: 0;
                 z-index: 1;
                 background: #ffffff;
             }
-            .table-card tbody td:nth-child(10) {
+            .table-card tbody td:nth-child(11) {
                 box-shadow: -4px 0 12px rgba(0,0,0,0.08);
             }
-            .table-card tbody tr:hover td:nth-child(10) {
+            .table-card tbody tr:hover td:nth-child(11) {
                 background: rgba(59,130,246,0.04);
             }
             /* 手机端列宽收窄 */
@@ -437,11 +440,13 @@
             .table-card thead th:nth-child(8),
             .table-card tbody td:nth-child(8) { width: 55px !important; min-width: 50px; }
             .table-card thead th:nth-child(9),
-            .table-card tbody td:nth-child(9) { width: 40px !important; min-width: 36px; }
+            .table-card tbody td:nth-child(9) { width: 55px !important; min-width: 45px; }
             .table-card thead th:nth-child(10),
-            .table-card tbody td:nth-child(10) { width: 120px !important; min-width: 100px; }
+            .table-card tbody td:nth-child(10) { width: 40px !important; min-width: 36px; }
             .table-card thead th:nth-child(11),
-            .table-card tbody td:nth-child(11) { width: 80px !important; min-width: 60px; }
+            .table-card tbody td:nth-child(11) { width: 120px !important; min-width: 100px; }
+            .table-card thead th:nth-child(12),
+            .table-card tbody td:nth-child(12) { width: 80px !important; min-width: 60px; }
         }
 
         /* 小屏平板 */
@@ -469,8 +474,8 @@
             .table-card tbody td { padding: 8px 6px; font-size: 12px; }
             .table-card thead th:nth-child(7),
             .table-card tbody td:nth-child(7) { display: none; }  /* 隐藏延迟列 */
-            .table-card thead th:nth-child(11),
-            .table-card tbody td:nth-child(11) { display: none; }  /* 隐藏收录时间 */
+            .table-card thead th:nth-child(12),
+            .table-card tbody td:nth-child(12) { display: none; }  /* 隐藏收录时间 */
             .latency-text { font-size: 12px; }
             .cache-cell { font-size: 11px; }
             .cache-bar-mini .track { width: 36px; }
@@ -503,9 +508,9 @@
             .table-card tbody td:nth-child(4) { display: none; }  /* 隐藏合集列 */
             .table-card thead th:nth-child(7),
             .table-card tbody td:nth-child(7) { display: none; }  /* 隐藏延迟列 */
-            .table-card thead th:nth-child(11),
-            .table-card tbody td:nth-child(11) { display: none; }  /* 隐藏收录时间 */
-            .table-card thead th:nth-child(10) {
+            .table-card thead th:nth-child(12),
+            .table-card tbody td:nth-child(12) { display: none; }  /* 隐藏收录时间 */
+            .table-card thead th:nth-child(11) {
                 text-indent: -9999px;
                 overflow: hidden;
             }
@@ -714,6 +719,7 @@
                     <th>状态</th>
                     <th>延迟</th>
                     <th>缓存</th>
+                    <th>大小</th>
                     <th>下集</th>
                     <th>操作</th>
                     <th>收录时间</th>
@@ -721,7 +727,7 @@
             </thead>
             <tbody id="tableBody">
                 <tr id="loadingRow">
-                    <td colspan="9" class="text-center py-5" style="color:#94a3b8">
+                    <td colspan="12" class="text-center py-5" style="color:#94a3b8">
                         <div class="skeleton" style="height:20px;width:60%;margin:0 auto"></div>
                     </td>
                 </tr>
@@ -1026,6 +1032,7 @@
                 <td><span class="status-pill ${sc}"><span class="sd"></span>${st}</span></td>
                 <td class="latency-text">${lt}</td>
                 <td class="cache-cell" id="cache-cell-${item.id}">${cacheHtml}</td>
+                <td style="font-size:11px;color:#64748b;text-align:right;">${item.cacheSize || '-'}</td>
                 <td class="next-cell" id="next-cell-${item.id}" style="text-align:center;">${nextHtml}</td>
                 <td>
                     <div class="action-group">

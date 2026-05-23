@@ -35,6 +35,7 @@ data class ListUiState(
     val moveGroupMessage: String? = null
 )
 
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 class ListViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(ListUiState())
@@ -42,9 +43,19 @@ class ListViewModel : ViewModel() {
 
     private val pageSize = 20
 
+    // 防抖自动搜索触发器
+    private val _searchTrigger = MutableStateFlow("")
+
     init {
         loadGroups()
         loadData()
+
+        // 用户停止输入 500ms 后自动搜索
+        viewModelScope.launch {
+            _searchTrigger
+                .debounce(500)
+                .collect { loadData() }
+        }
     }
 
     fun loadGroups() {
@@ -226,6 +237,7 @@ class ListViewModel : ViewModel() {
 
     fun setKeyword(keyword: String) {
         _uiState.update { it.copy(keyword = keyword) }
+        _searchTrigger.value = keyword
     }
 
     fun search() {

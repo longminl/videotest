@@ -247,16 +247,18 @@ fun PlayerScreen(
         isSwitchingVideo = false
     }
 
-    // ── Player listener ──
-    LaunchedEffect(player) {
-        player?.addListener(object : Player.Listener {
+    // ── Player listener (DisposableEffect ensures cleanup) ──
+    DisposableEffect(player) {
+        val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
             }
             override fun onPlayerError(error: PlaybackException) {
                 playerError = true
             }
-        })
+        }
+        player?.addListener(listener)
+        onDispose { player?.removeListener(listener) }
     }
 
     // ── Position polling ──
@@ -434,12 +436,13 @@ fun PlayerScreen(
                 AndroidView(
                     factory = {
                         PlayerView(it).apply {
-                            this.player = player
                             useController = false
                             resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
                             keepScreenOn = true
                         }
                     },
+                    update = { view -> view.player = player },
+                    onRelease = { view -> view.player = null },
                     modifier = Modifier.fillMaxSize()
                 )
             }

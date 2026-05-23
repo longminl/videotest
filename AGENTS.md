@@ -195,6 +195,26 @@ Set-Location "D:\opencode\videotest\android"
 
 ---
 
+## 会话摘要 (2026-05-23) — PlayerActivity 泄漏修复 + 搜索优化
+
+### 已完成
+1. **PlayerActivity ExoPlayer 泄漏修复** — `Player.Listener` 从 `LaunchedEffect` 改为 `DisposableEffect`，在 `onDispose` 中调用 `player.removeListener(listener)` 断开引用；`AndroidView` 增加 `update` + `onRelease` 参数，`onRelease` 中设置 `view.player = null` 确保 PlayerView 到 ExoPlayer 的强引用在组件销毁时断开。`configChanges` 已在 manifest 中配置，Activity 不会因方向变化而 recreate。
+2. **列表页搜索 debounce 自动搜索** — `ListViewModel` 新增 `_searchTrigger` StateFlow + `debounce(500)` 协程，用户停止输入 500ms 后自动调用 `loadData()` 搜索；手动点击键盘"Search"仍保持即时搜索。
+3. **搜索空结果优化** — 当关键词/筛选激活但无结果时，显示"未找到匹配的视频"+"尝试修改搜索条件或筛选"；无筛选时仍显示"还没有收藏的视频"+"点击 + 按钮添加"。
+4. **搜索激活视觉指示** — 有搜索关键词时输入框聚焦边框从 `Blue600` 变为 `Blue700` 稍深色。
+
+### 关键变更
+- `PlayerActivity.kt` — `DisposableEffect(player)` + `AndroidView(update=, onRelease=)`
+- `ListViewModel.kt` — `_searchTrigger` + `debounce(500)` + `@OptIn(FlowPreview::class)`
+- `ListScreen.kt` — 空状态文案区分有/无筛选、搜索栏边框颜色变化
+
+### 技术要点
+- `AndroidView` 的 `onRelease` 在 Compose UI 1.6+（BOM 2024.02.00）可用
+- `OutlinedTextFieldDefaults.colors()` 在 Material3 1.2.0 中无 `unfocusedIndicatorColor`/`focusedIndicatorColor` 参数
+- `debounce` 来自 `kotlinx.coroutines.flow`，需 `@OptIn(FlowPreview::class)`
+
+---
+
 ## Repository Map
 
 完整 codemap 位于项目根目录的 `codemap.md`。

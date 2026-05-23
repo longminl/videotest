@@ -175,7 +175,7 @@ fun ListScreen(
                     keyboardActions = KeyboardActions(onSearch = { viewModel.search() }),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Blue600,
+                        focusedBorderColor = if (uiState.keyword.isNotEmpty()) Blue700 else Blue600,
                         unfocusedBorderColor = Color.Transparent
                     ),
                     modifier = Modifier
@@ -330,12 +330,25 @@ fun ListScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            Icon(Icons.Default.VideoLibrary, contentDescription = null,
-                                modifier = Modifier.size(64.dp), tint = TextTertiary.copy(alpha = 0.5f))
+                            val hasFilter = uiState.keyword.isNotBlank() ||
+                                uiState.statusFilter != null ||
+                                uiState.groupIdFilter != null
+                            Icon(
+                                imageVector = if (hasFilter) Icons.Default.SearchOff else Icons.Default.VideoLibrary,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = TextTertiary.copy(alpha = 0.5f)
+                            )
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("还没有收藏的视频", color = TextTertiary, fontSize = 16.sp)
+                            Text(
+                                if (hasFilter) "未找到匹配的视频" else "还没有收藏的视频",
+                                color = TextTertiary, fontSize = 16.sp
+                            )
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text("点击 + 按钮添加", color = TextTertiary.copy(alpha = 0.6f), fontSize = 13.sp)
+                            Text(
+                                if (hasFilter) "尝试修改搜索条件或筛选" else "点击 + 按钮添加",
+                                color = TextTertiary.copy(alpha = 0.6f), fontSize = 13.sp
+                            )
                         }
                     }
 
