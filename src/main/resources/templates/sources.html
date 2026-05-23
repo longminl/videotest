@@ -133,7 +133,10 @@
                 <div class="row g-2 mb-2">
                     <div class="col-6">
                         <label style="font-size:12px;color:#64748b;margin-bottom:2px;">集数正则 *</label>
-                        <input type="text" id="f_epPattern" class="form-control input-glass" placeholder="(\d+)-(\d+)\.html">
+                        <div class="d-flex gap-1">
+                            <input type="text" id="f_epPattern" class="form-control input-glass" placeholder="(\d+)-(\d+)\.html" style="flex:1;">
+                            <button type="button" class="btn btn-sm" style="background:rgba(139,92,246,0.08);color:#7c3aed;border:1px solid rgba(139,92,246,0.2);border-radius:8px;white-space:nowrap;font-size:12px;" onclick="suggestRegex()" title="输入示例播放URL，自动填入首页和集数正则">🤖 自动获取</button>
+                        </div>
                     </div>
                     <div class="col-3">
                         <label style="font-size:12px;color:#64748b;margin-bottom:2px;">捕获组</label>
@@ -466,6 +469,28 @@
         openTestParse(null);
         document.getElementById('testParseUrl').value = url;
         doTestParse();
+    }
+
+    function suggestRegex() {
+        var url = prompt('输入示例播放URL，自动填入首页和集数正则：\n（例如 https://www.xigua9.com/play/RcVn-1-1.html）', '');
+        if (!url) return;
+        fetch('/api/source/suggest-regex', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({seriesUrl: url})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (res.code === 200 && res.data && res.data.pattern) {
+                document.getElementById('f_homeUrl').value = res.data.homeUrl || '';
+                document.getElementById('f_epPattern').value = res.data.pattern;
+                document.getElementById('f_epGroup').value = res.data.group || 1;
+                alert('首页：' + (res.data.homeUrl || '') + '\n正则：' + res.data.pattern + '\n捕获组：' + (res.data.group || 1));
+            } else {
+                showToast('未能自动推测正则：' + (res.message || 'URL中未找到数字'), 'warning');
+            }
+        })
+        .catch(function() { showToast('请求失败', 'danger'); });
     }
 
     // ===== 从搜索结果导入剧集 =====

@@ -812,11 +812,14 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="d-flex gap-2 mb-3">
-                        <input type="text" id="globalSearchInput" class="form-control input-glass" placeholder="输入关键词搜索所有视频源..." onkeyup="if(event.key==='Enter') doGlobalSearch()">
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="text" id="globalSearchInput" class="form-control input-glass" placeholder="输入关键词搜索视频源..." onkeyup="if(event.key==='Enter') doGlobalSearch()">
                         <button class="btn btn-collect" style="padding:10px 20px;white-space:nowrap;" onclick="doGlobalSearch()"><i class="bi bi-search"></i> 搜索</button>
                     </div>
-                    <div id="globalSearchResults" style="max-height:50vh;overflow-y:auto;">
+                    <div id="globalSearchSources" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;max-height:80px;overflow-y:auto;">
+                        <span style="color:#94a3b8;font-size:12px;padding:2px 0;"><span class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px;"></span>加载视频源...</span>
+                    </div>
+                    <div id="globalSearchResults" style="max-height:45vh;overflow-y:auto;">
                         <p style="color:#94a3b8;text-align:center;padding:20px;">输入关键词开始搜索</p>
                     </div>
                 </div>
@@ -1613,22 +1616,69 @@
 
     // ===== 总搜索 =====
 
+    var globalSources = [];     // [{id, name}]
+    var globalSearchData = {};  // sourceId → {source, results}
+    var globalSelected = {};    // key "sourceId:url" → true
+
     function openGlobalSearch() {
         document.getElementById('globalSearchInput').value = '';
         document.getElementById('globalSearchResults').innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">输入关键词开始搜索</p>';
         document.getElementById('globalImportBtn').style.display = 'none';
         document.getElementById('globalSearchSelected').textContent = '';
+        loadGlobalSearchSources();
         new bootstrap.Modal(document.getElementById('globalSearchModal')).show();
     }
 
-    var globalSearchData = {};  // sourceId → {source, results}
-    var globalSelected = {};    // key "sourceId:url" → true
+    function loadGlobalSearchSources() {
+        var container = document.getElementById('globalSearchSources');
+        fetch('/api/source/list')
+            .then(r => r.json())
+            .then(function(res) {
+                if (res.code !== 200 || !res.data || res.data.length === 0) {
+                    container.innerHTML = '<span style="color:#94a3b8;font-size:12px;">暂无视频源，请先添加</span>';
+                    return;
+                }
+                globalSources = res.data.map(function(s) { return {id: s.id, name: s.name}; });
+                container.innerHTML = '<label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;color:#3b82f6;margin-right:4px;" title="全选/取消">' +
+                    '<input type="checkbox" id="globalSourceToggle" checked onchange="toggleAllGlobalSources()" style="accent-color:#3b82f6;"> 全选</label>' +
+                    globalSources.map(function(s) {
+                        return '<label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;padding:2px 8px;background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;">' +
+                            '<input type="checkbox" class="global-source-cb" data-sid="' + s.id + '" checked onchange="updateGlobalSourceToggle()" style="accent-color:#3b82f6;"> ' +
+                            escapeHtml(s.name) + '</label>';
+                    }).join('');
+            })
+            .catch(function() {
+                container.innerHTML = '<span style="color:#dc2626;font-size:12px;">加载失败</span>';
+            });
+    }
+
+    function toggleAllGlobalSources() {
+        var checked = document.getElementById('globalSourceToggle').checked;
+        document.querySelectorAll('.global-source-cb').forEach(function(cb) { cb.checked = checked; });
+    }
+
+    function updateGlobalSourceToggle() {
+        var all = document.querySelectorAll('.global-source-cb');
+        var checkedAll = true;
+        all.forEach(function(cb) { if (!cb.checked) checkedAll = false; });
+        document.getElementById('globalSourceToggle').checked = checkedAll;
+    }
+
+    function getSelectedSourceIds() {
+        var ids = [];
+        document.querySelectorAll('.global-source-cb:checked').forEach(function(cb) {
+            ids.push(parseInt(cb.getAttribute('data-sid')));
+        });
+        return ids;
+    }
 
     function doGlobalSearch() {
         var keyword = document.getElementById('globalSearchInput').value.trim();
         if (!keyword) { showToast('请输入关键词', 'warning'); return; }
+        var sourceIds = getSelectedSourceIds();
+        if (sourceIds.length === 0) { showToast('请至少选择一个视频源', 'warning'); return; }
         var results = document.getElementById('globalSearchResults');
-        results.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;"><span class="spinner-border spinner-border-sm me-2"></span>正在搜索所有视频源...</p>';
+        results.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;"><span class="spinner-border spinner-border-sm me-2"></span>正在搜索 ' + sourceIds.length + ' 个视频源...</p>';
         document.getElementById('globalImportBtn').style.display = 'none';
         document.getElementById('globalSearchSelected').textContent = '';
         globalSearchData = {};
@@ -1637,7 +1687,7 @@
         fetch('/api/episode/search-all', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({keyword: keyword})
+            body: JSON.stringify({keyword: keyword, sourceIds: sourceIds})
         }).then(r => r.json()).then(res => {
             if (res.code !== 200 || !res.data) {
                 results.innerHTML = '<p style="color:#dc2626;text-align:center;">搜索失败</p>';

@@ -176,6 +176,45 @@ public class VideoSourceService {
 
         try {
             org.jsoup.nodes.Document doc = org.jsoup.Jsoup.parse(html, searchUrl);
+            org.jsoup.nodes.Element searchList = doc.selectFirst("ul.search-list");
+
+            // 策略0：专门解析 <ul class="search-list">（maccms 系站点通用）
+            if (searchList != null) {
+                org.jsoup.select.Elements items = searchList.select("> li");
+                for (org.jsoup.nodes.Element item : items) {
+                    org.jsoup.nodes.Element titleLink = item.selectFirst("h5.subject a[href], .subject a[href], a[href]");
+                    if (titleLink == null) continue;
+                    String href = titleLink.attr("href").trim();
+                    String text = titleLink.text().trim();
+                    if (text.isEmpty() || href.isEmpty()) continue;
+                    if (isNoiseLink(href, text)) continue;
+                    // 取 <b> 内的核心标题（去掉 douban_score 等后缀噪声）
+                    org.jsoup.nodes.Element b = titleLink.selectFirst("b");
+                    if (b != null) {
+                        String bText = b.text().trim();
+                        if (!bText.isEmpty() && bText.length() < 50) text = bText;
+                    }
+                    String fullUrl = resolveUrl(href, source.getHomeUrl());
+                    if (fullUrl == null || seenUrls.contains(fullUrl)) continue;
+                    seenUrls.add(fullUrl);
+                    java.util.Map<String, String> result = new java.util.LinkedHashMap<>();
+                    result.put("title", text);
+                    result.put("url", fullUrl);
+                    // 取封面
+                    org.jsoup.nodes.Element img = item.selectFirst("img[src]");
+                    if (img != null) {
+                        String imgSrc = img.attr("src").trim();
+                        if (!imgSrc.isEmpty() && !imgSrc.startsWith("data:")) {
+                            result.put("cover", resolveUrl(imgSrc, source.getHomeUrl()));
+                        }
+                    }
+                    results.add(result);
+                }
+                if (!results.isEmpty()) {
+                    log.info("HTML 搜索结果解析完成，共 {} 条 [策略0-search-list]", results.size());
+                    return results;
+                }
+            }
 
             // 策略1：查找常见搜索结果容器中的链接
             String[] selectors = {
@@ -204,11 +243,12 @@ public class VideoSourceService {
                     if (href.isEmpty() || href.startsWith("#") || href.startsWith("javascript")) continue;
                     if (text.equals("首页") || text.equals("上一页") || text.equals("下一页")
                         || text.contains("登录") || text.contains("注册") || text.contains("关于")) continue;
-                    // 剧集详情页常见 URL 模式
-                    if (href.matches(".*/lty/\\d+.*") || href.matches(".*/nlu/\\d+.*")
-                        || href.matches(".*/vod/\\d+.*") || href.matches(".*/detail/\\d+.*")
-                        || href.matches(".*/show/\\d+.*") || href.matches(".*/mip/\\d+.*")
-                        || href.matches(".*/play/\\d+.*") || href.matches(".*/content/\\w+.*")) {
+                    // 剧集详情页常见 URL 模式（含字母数字混合路径）
+                    String hrefLower = href.toLowerCase();
+                    if (hrefLower.matches(".*/lty/\\d+.*") || hrefLower.matches(".*/nlu/\\d+.*")
+                        || hrefLower.matches(".*/vod/\\d+.*") || hrefLower.matches(".*/detail/\\d+.*")
+                        || hrefLower.matches(".*/show/\\d+.*") || hrefLower.matches(".*/mip/\\d+.*")
+                        || hrefLower.matches(".*/play/\\w+.*") || hrefLower.matches(".*/content/\\w+.*")) {
                         addHtmlResult(source, results, seenUrls, link);
                     }
                 }
@@ -373,6 +413,89 @@ public class VideoSourceService {
         return results;
     }
 
+    // ====== 正则智能建议 ======
+
+    /**
+     * 根据示例播放 URL 自动推测集数正则和首页地址
+     * 输入: https://www.xigua9.com/play/RcVn-1-1.html
+     * 输出: { homeUrl, pattern, group, sampleUrls }
+     */
+    public Map<String, Object> suggestRegex(String seriesUrl) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("pattern", "");
+        result.put("group", 1);
+        result.put("homeUrl", "");
+        result.put("sampleUrls", Collections.emptyList());
+
+        if (seriesUrl == null || seriesUrl.trim().isEmpty()) {
+            return result;
+        }
+
+        try {
+            java.net.URL urlObj = new java.net.URL(seriesUrl);
+            String homeUrl = urlObj.getProtocol() + "://" + urlObj.getHost();
+            String path = urlObj.getPath();
+
+            // 按 / 分割，找到第一个含数字的段，取它及之后的部分
+            String[] segments = path.split("/");
+            int startIdx = -1;
+            for (int i = 0; i < segments.length; i++) {
+                if (segments[i].matches(".*\\d+.*")) {
+                    startIdx = i;
+                    break;
+                }
+            }
+            if (startIdx < 0) {
+                result.put("homeUrl", homeUrl);
+                return result;
+            }
+
+            // 拼接从 startIdx 开始的部分，去掉首个数字段前的固定前缀
+            StringBuilder relevantPart = new StringBuilder();
+            for (int i = startIdx; i < segments.length; i++) {
+                if (i > startIdx) relevantPart.append('/');
+                String seg = segments[i];
+                if (i == startIdx) {
+                    // 跳过第一个数字段中的非数字前缀（如 RcVn-1-1.html → 1-1.html）
+                    int digitPos = -1;
+                    for (int j = 0; j < seg.length(); j++) {
+                        if (Character.isDigit(seg.charAt(j))) {
+                            digitPos = j;
+                            break;
+                        }
+                    }
+                    if (digitPos > 0) seg = seg.substring(digitPos);
+                }
+                relevantPart.append(seg);
+            }
+            String subPath = relevantPart.toString();
+
+            // 转义正则特殊字符（数字之外的字符）
+            String escaped = subPath.replaceAll("([.+*?^${}()|\\[\\]\\\\])", "\\\\$1");
+            // 将数字序列替换为捕获组 (\d+)
+            String regexPattern = escaped.replaceAll("\\d+", "(\\\\d+)");
+
+            // 统计捕获组数量
+            int groupCount = 0;
+            int idx = 0;
+            while ((idx = regexPattern.indexOf("(\\d+)", idx)) != -1) {
+                groupCount++;
+                idx += 6;
+            }
+            int suggestedGroup = groupCount >= 2 ? groupCount : 1;
+
+            result.put("pattern", regexPattern);
+            result.put("group", suggestedGroup);
+            result.put("homeUrl", homeUrl);
+            result.put("sampleUrls", Collections.singletonList(seriesUrl));
+            return result;
+
+        } catch (Exception e) {
+            log.warn("suggestRegex 解析URL失败: {}", e.getMessage());
+            return result;
+        }
+    }
+
     // ====== 集数解析测试 ======
 
     /**
@@ -387,11 +510,11 @@ public class VideoSourceService {
         log.info("开始解析剧集主页: {}", seriesUrl);
 
         try {
-            Document doc = Jsoup.connect(seriesUrl)
-                    .userAgent(userAgent)
-                    .timeout(timeout)
-                    .followRedirects(true)
-                    .get();
+            Document doc = pageFetcher.fetch(seriesUrl);
+            if (doc == null) {
+                log.warn("剧集主页抓取失败: {}", seriesUrl);
+                return Collections.emptyList();
+            }
 
             List<Map<String, Object>> episodes = new ArrayList<>();
             String pattern = source.getEpisodePattern();

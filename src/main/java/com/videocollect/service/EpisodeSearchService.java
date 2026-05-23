@@ -49,11 +49,19 @@ public class EpisodeSearchService {
     // ====== 全源搜索 ======
 
     /**
-     * 全源搜索：在所有视频源中搜索关键词
-     * 返回 Map<sourceId, {source, results}>
+     * 全源搜索：在指定视频源（或全部）中搜索关键词
+     *
+     * @param keyword   关键词
+     * @param sourceIds 要搜索的视频源 ID 列表，null 或空集合表示搜索全部
+     * @return Map<sourceId, {source, results}>
      */
-    public Map<Long, SourceSearchResult> searchAll(String keyword) {
-        List<VideoSource> sources = videoSourceDao.findAll();
+    public Map<Long, SourceSearchResult> searchAll(String keyword, List<Long> sourceIds) {
+        List<VideoSource> sources;
+        if (sourceIds != null && !sourceIds.isEmpty()) {
+            sources = videoSourceDao.findByIds(sourceIds);
+        } else {
+            sources = videoSourceDao.findAll();
+        }
         Map<Long, SourceSearchResult> grouped = new LinkedHashMap<>();
 
         for (VideoSource source : sources) {

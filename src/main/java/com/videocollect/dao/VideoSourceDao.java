@@ -29,4 +29,7 @@ public interface VideoSourceDao {
 
     /** 批量插入（导入用） */
     int insertBatch(@Param("list") List<VideoSource> sources);
+
+    /** 根据ID列表批量查询 */
+    List<VideoSource> findByIds(@Param("ids") List<Long> ids);
 }

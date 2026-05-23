@@ -66,6 +66,15 @@
         DELETE FROM video_source WHERE id = #{id}
     </delete>
 
+    <select id="findByIds" resultMap="baseMap">
+        SELECT <include refid="baseColumns"/> FROM video_source
+        WHERE id IN
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
     <insert id="insertBatch">
         INSERT INTO video_source (name, home_url, search_url, search_data_path,
             search_title_field, search_url_field, search_cover_field,

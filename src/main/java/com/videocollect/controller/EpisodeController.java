@@ -6,6 +6,7 @@ import com.videocollect.service.EpisodeSearchService.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,15 +22,28 @@ public class EpisodeController {
     private EpisodeSearchService episodeSearchService;
 
     /**
-     * 全源搜索
+     * 全源搜索（可指定 sourceIds 过滤）
      */
     @PostMapping("/search-all")
-    public ApiResult<Map<Long, SourceSearchResult>> searchAll(@RequestBody Map<String, String> body) {
-        String keyword = body.get("keyword");
+    public ApiResult<Map<Long, SourceSearchResult>> searchAll(@RequestBody Map<String, Object> body) {
+        String keyword = (String) body.get("keyword");
         if (keyword == null || keyword.trim().isEmpty()) {
             return ApiResult.error("关键词不能为空");
         }
-        Map<Long, SourceSearchResult> results = episodeSearchService.searchAll(keyword.trim());
+
+        @SuppressWarnings("unchecked")
+        List<Object> rawIds = (List<Object>) body.get("sourceIds");
+        List<Long> sourceIds = null;
+        if (rawIds != null && !rawIds.isEmpty()) {
+            sourceIds = new ArrayList<>();
+            for (Object o : rawIds) {
+                if (o instanceof Number) {
+                    sourceIds.add(((Number) o).longValue());
+                }
+            }
+        }
+
+        Map<Long, SourceSearchResult> results = episodeSearchService.searchAll(keyword.trim(), sourceIds);
         return ApiResult.success(results);
     }
 

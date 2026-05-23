@@ -136,6 +136,19 @@ public class VideoSourceController {
     }
 
     /**
+     * 智能推测集数正则
+     */
+    @PostMapping("/suggest-regex")
+    public ApiResult<Map<String, Object>> suggestRegex(@RequestBody Map<String, String> body) {
+        String seriesUrl = body.get("seriesUrl");
+        if (seriesUrl == null || seriesUrl.trim().isEmpty()) {
+            return ApiResult.error("seriesUrl 不能为空");
+        }
+        Map<String, Object> suggestion = videoSourceService.suggestRegex(seriesUrl);
+        return ApiResult.success(suggestion);
+    }
+
+    /**
      * 测试集数解析（首页测试时用）
      */
     @PostMapping("/test-parse-no-id")

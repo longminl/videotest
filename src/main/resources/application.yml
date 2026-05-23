@@ -24,6 +24,8 @@ video:
   fetch:
     user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36
     timeout: 8000
+    # 浏览器无头降级路径（可选）。为空则自动探测 Edge → Chrome
+    browser-path:
 
   # yt-dlp 配置（用于解析 B站/YouTube 等 JS 渲染的视频）
   ytdlp:
@@ -33,14 +35,14 @@ video:
   # 预设视频源模板（启动时自动加载到 video_source 表）
   source-templates:
     - name: "czltnl"
-      homeUrl: "https://www.czltnl.com"
+      homeUrl: "https://www.dongman.com"
       searchUrl: "/api/search?wd={keyword}"
       searchDataPath: "$"
       titleField: "title"
       urlField: "url"
       episodePattern: "(\\d+)-(\\d+)\\.html"
       episodeGroup: 2
-    - name: "动漫岛"
+    - name: "动漫"
       homeUrl: "https://www.dmdao.com"
       searchUrl: "/search?key={keyword}"
       searchDataPath: "$.data.list"
