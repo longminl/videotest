@@ -153,11 +153,11 @@
     </select>
 
     <update id="updateGroup">
-        UPDATE video_collection SET group_id = #{groupId}, updated_at = NOW() WHERE id = #{id}
+        UPDATE video_collection SET group_id = #{groupId}, updated_at = #{updatedAt} WHERE id = #{id}
     </update>
 
     <update id="batchUpdateGroup">
-        UPDATE video_collection SET group_id = #{groupId}, updated_at = NOW()
+        UPDATE video_collection SET group_id = #{groupId}, updated_at = #{updatedAt}
         WHERE id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">
             #{id}
@@ -165,7 +165,7 @@
     </update>
 
     <update id="updateEpisodeNumber">
-        UPDATE video_collection SET episode_number = #{episodeNumber}, updated_at = NOW() WHERE id = #{id}
+        UPDATE video_collection SET episode_number = #{episodeNumber}, updated_at = #{updatedAt} WHERE id = #{id}
     </update>
 
     <select id="findMaxEpisodeNumber" resultType="int">

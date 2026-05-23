@@ -36,6 +36,9 @@ public class CollectService {
     @Autowired
     private VideoDlpResolver videoDlpResolver;
 
+    @Autowired
+    private EpisodeExtractor episodeExtractor;
+
     /** 移动端 User-Agent（用于反反爬 && 某些仅手机版才嵌入视频地址的影视站） */
     private static final String MOBILE_UA = "Mozilla/5.0 (Linux; Android 13; SM-S908E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36";
     private static final String[] VIDEO_EXTENSIONS = {
@@ -89,6 +92,7 @@ public class CollectService {
         VideoRecord record = new VideoRecord(title, url, url, status,
                 checkResult.getLatencyMs(), null);
         record.setRemark(remark);
+        record.setEpisodeNumber(episodeExtractor.extractFromUrl(url));
         videoRecordDao.insert(record);
 
         log.info("视频直链收录完成, ID={}, title={}, status={}", record.getId(), title, status);
@@ -146,6 +150,7 @@ public class CollectService {
         VideoRecord record = new VideoRecord(pageTitle != null ? pageTitle : "未命名",
                 url, url, 3, null, pageTitle);
         record.setRemark("页面中未发现视频链接" + (failReason != null ? "（" + failReason + "）" : ""));
+        record.setEpisodeNumber(episodeExtractor.extract(url, pageTitle));
         videoRecordDao.insert(record);
         return CollectResult.failure("视频解析失败: " + (failReason != null ? failReason : "页面中未发现视频链接"));
     }
@@ -163,6 +168,7 @@ public class CollectService {
         VideoRecord record = new VideoRecord(title, sourceUrl, videoUrl, status,
                 checkResult.getLatencyMs(), pageTitle);
         record.setRemark(remark);
+        record.setEpisodeNumber(episodeExtractor.extract(sourceUrl, pageTitle));
         videoRecordDao.insert(record);
 
         log.info("收录完成, ID={}, title={}, status={}, source={}",
@@ -264,6 +270,11 @@ public class CollectService {
             videoRecordDao.updatePageTitle(id, newPageTitle);
         }
         videoRecordDao.updateIsCached(id, false);
+        // 重新提取集数（URL 或新标题可能含集数信息）
+        Integer ep = episodeExtractor.extract(newVideoUrl, newPageTitle);
+        if (ep != null) {
+            videoRecordDao.updateEpisodeNumber(id, ep);
+        }
 
         log.info("重新解析成功, ID={}, new video_url={}, status={}", id, newVideoUrl, status);
         String msg = source + "成功"
