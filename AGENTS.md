@@ -192,3 +192,16 @@ Set-Location "D:\opencode\videotest\android"
 - `detectTransformGestures` 和 `detectTapGestures` 分两层避免冲突
 - `ACCOMPANIST_INSETS` 弃用警告已排查，当前仅用系统 `windowInsets`
 - ListScreen 分页通过 `LazyColumn` + `LaunchedEffect` 检测底部触发加载更多
+
+---
+
+## Repository Map
+
+完整 codemap 位于项目根目录的 `codemap.md`。
+
+在处理任何任务前，请先阅读 `codemap.md` 了解：
+- 项目架构和入口点
+- 目录职责和设计模式
+- 模块间的数据流和集成点
+
+如需深入处理特定目录，同时阅读该目录下的 `codemap.md`。
