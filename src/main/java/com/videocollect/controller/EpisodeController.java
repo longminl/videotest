@@ -3,6 +3,8 @@ package com.videocollect.controller;
 import com.videocollect.dto.ApiResult;
 import com.videocollect.service.EpisodeSearchService;
 import com.videocollect.service.EpisodeSearchService.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +19,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/episode")
 public class EpisodeController {
+
+    private static final Logger log = LoggerFactory.getLogger(EpisodeController.class);
 
     @Autowired
     private EpisodeSearchService episodeSearchService;
@@ -42,6 +46,7 @@ public class EpisodeController {
                 }
             }
         }
+        log.info("搜索请求 keyword={}, sourceIds={}, rawIds={}", keyword, sourceIds, rawIds);
 
         Map<Long, SourceSearchResult> results = episodeSearchService.searchAll(keyword.trim(), sourceIds);
         return ApiResult.success(results);

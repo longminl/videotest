@@ -164,47 +164,67 @@ private fun ColumnScope.SearchStep(uiState: GlobalSearchUiState, viewModel: Glob
 
 @Composable
 private fun ResultsStep(uiState: GlobalSearchUiState, viewModel: GlobalSearchViewModel) {
-    // Back button
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { viewModel.reset() }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "返回", tint = TextSecondary)
-        }
-        Text("搜索结果: ${uiState.keyword}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
-    }
-
-    if (uiState.isSearching) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator(color = Blue600)
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("搜索中...", color = TextSecondary)
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Back button + title
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { viewModel.reset() }) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "返回", tint = TextSecondary)
             }
+            Text("搜索结果: ${uiState.keyword}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
         }
-    } else if (uiState.searchResults.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("未找到结果", color = TextTertiary)
+
+        // Progress bar + text while searching
+        if (uiState.isSearching) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                color = Blue600
+            )
+            Text(
+                uiState.searchProgressText,
+                fontSize = 13.sp, color = TextSecondary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
         }
-    } else {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            uiState.searchResults.forEach { (sourceId, results) ->
-                val sourceName = uiState.sources.find { it.id == sourceId }?.name ?: "源#$sourceId"
-                if (results.isNotEmpty()) {
-                    item {
-                        Text(
-                            sourceName,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = Blue700,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                    }
-                    items(results) { item ->
-                        SearchResultCard(
-                            title = item.title ?: "",
-                            url = item.url ?: "",
-                            sourceId = sourceId,
-                            onClick = { viewModel.selectResult(sourceId, item.url ?: "", item.title ?: "") }
-                        )
+
+        if (uiState.searchResults.isEmpty() && !uiState.isSearching) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("未找到结果", color = TextTertiary)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                uiState.searchResults.forEach { (sourceId, results) ->
+                    val sourceName = uiState.sources.find { it.id == sourceId }?.name ?: "源#$sourceId"
+                    val sourceError = uiState.searchSourceErrors[sourceId]
+                    if (results.isNotEmpty()) {
+                        item {
+                            Text(
+                                "$sourceName (${results.size} 条)${if (sourceError != null) " ⚠️ $sourceError" else ""}",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = Blue700,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                        items(results) { item ->
+                            SearchResultCard(
+                                title = item.title ?: "",
+                                url = item.url ?: "",
+                                sourceId = sourceId,
+                                onClick = { viewModel.selectResult(sourceId, item.url ?: "", item.title ?: "") }
+                            )
+                        }
+                    } else if (sourceError != null) {
+                        item {
+                            Text(
+                                "$sourceName ⚠️ $sourceError",
+                                fontSize = 13.sp, color = StatusRed,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
                     }
                 }
             }

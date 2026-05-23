@@ -39,8 +39,8 @@ public class VideoChecker {
 
     /** 用于内容嗅探的短超时客户端 */
     private final OkHttpClient sniffClient = new OkHttpClient.Builder()
-            .connectTimeout(3000, TimeUnit.MILLISECONDS)
-            .readTimeout(3000, TimeUnit.MILLISECONDS)
+            .connectTimeout(5000, TimeUnit.MILLISECONDS)
+            .readTimeout(5000, TimeUnit.MILLISECONDS)
             .followRedirects(true)
             .followSslRedirects(true)
             .build();
@@ -120,14 +120,20 @@ public class VideoChecker {
                     // HEAD 请求不被支持（502/405/403），改用 GET + 内容嗅探
                     log.info("HEAD 返回 {}，尝试 GET 嗅探: {}", code, videoUrl);
                     playable = sniffIsM3u8(videoUrl);
+                } else {
+                    // HEAD 返回非2xx且非视频扩展名，也尝试 GET 嗅探兜底
+                    log.info("HEAD 返回 {}，非视频扩展，尝试 GET 嗅探兜底: {}", code, videoUrl);
+                    playable = sniffIsM3u8(videoUrl);
                 }
 
                 return new CheckResult(playable, (int) elapsed, code,
                         playable ? null : "HTTP " + code + " 或 Content-Type 非视频类型");
             }
         } catch (java.net.SocketTimeoutException e) {
-            log.warn("检测超时: {}", videoUrl);
-            return new CheckResult(false, null, 0, "连接超时");
+            log.warn("HEAD 超时，尝试 GET 嗅探: {}", videoUrl);
+            boolean sniffed = sniffIsM3u8(videoUrl);
+            return new CheckResult(sniffed, null, 0,
+                    sniffed ? null : "连接超时，GET 嗅探也失败");
         } catch (Exception e) {
             log.error("检测失败: {}, 原因: {}", videoUrl, e.getMessage());
             return new CheckResult(false, null, 0, "检测异常: " + e.getMessage());

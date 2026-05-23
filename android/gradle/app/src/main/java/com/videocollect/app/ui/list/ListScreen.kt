@@ -185,8 +185,7 @@ fun ListScreen(
             }
 
             // Group filter chips
-            if (!uiState.isSelectMode && uiState.groups.isNotEmpty()) {
-                val groupList = uiState.groups
+            if (!uiState.isSelectMode) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -201,7 +200,7 @@ fun ListScreen(
                         colors = chipColors(uiState.groupIdFilter == null),
                         border = null
                     )
-                    groupList.forEach { group ->
+                    uiState.groups.forEach { group ->
                         FilterChip(
                             selected = uiState.groupIdFilter == group.id,
                             onClick = { viewModel.setGroupFilter(group.id) },
@@ -217,6 +216,25 @@ fun ListScreen(
                             border = null
                         )
                     }
+                    IconButton(
+                        onClick = { viewModel.openGroupManagement() },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = "管理合集",
+                            tint = Blue600,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                val groupErr = uiState.groupError
+                if (groupErr != null) {
+                    Text(
+                        groupErr,
+                        color = StatusRed, fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
                 }
             }
 
@@ -389,6 +407,18 @@ fun ListScreen(
             onDismiss = { viewModel.dismissMoveGroupDialog() }
         )
     }
+
+    // Group management dialog
+    if (uiState.showGroupManagementDialog) {
+        GroupManagementDialog(
+            groups = uiState.groups,
+            groupError = uiState.groupManagementError,
+            onDismiss = { viewModel.dismissGroupManagement() },
+            onCreateGroup = { name -> viewModel.createGroup(name) },
+            onDeleteGroup = { id -> viewModel.deleteGroup(id) },
+            onRenameGroup = { id, name -> viewModel.renameGroup(id, name) }
+        )
+    }
 }
 
 @Composable
@@ -549,6 +579,164 @@ private fun VideoCard(
                 }
             }
         }
+    }
+}
+
+// ====== 管理合集弹窗 ======
+
+@Composable
+private fun GroupManagementDialog(
+    groups: List<VideoGroup>,
+    groupError: String?,
+    onDismiss: () -> Unit,
+    onCreateGroup: (String) -> Unit,
+    onDeleteGroup: (Long) -> Unit,
+    onRenameGroup: (Long, String) -> Unit
+) {
+    var newGroupName by remember { mutableStateOf("") }
+    var renameTarget by remember { mutableStateOf<Long?>(null) }
+    var renameName by remember { mutableStateOf("") }
+    var deleteConfirmId by remember { mutableStateOf<Long?>(null) }
+
+    AlertDialog(
+        onDismissRequest = {
+            if (deleteConfirmId == null && renameTarget == null) onDismiss()
+        },
+        title = { Text("管理合集") },
+        text = {
+            Column {
+                if (groupError != null) {
+                    Text(groupError, color = StatusRed, fontSize = 13.sp, modifier = Modifier.padding(bottom = 8.dp))
+                }
+                if (groups.isEmpty()) {
+                    Text("还没有合集", color = TextTertiary, fontSize = 14.sp,
+                        modifier = Modifier.padding(vertical = 8.dp))
+                } else {
+                    groups.forEach { group ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Folder,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = Blue500
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(group.name ?: "未命名", fontSize = 14.sp, color = TextPrimary)
+                                Text(
+                                    "${group.videoCount ?: 0} 个视频",
+                                    fontSize = 11.sp, color = TextTertiary
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    renameTarget = group.id
+                                    renameName = group.name ?: ""
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = "重命名",
+                                    modifier = Modifier.size(18.dp), tint = Blue500)
+                            }
+                            IconButton(
+                                onClick = { deleteConfirmId = group.id },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "删除",
+                                    modifier = Modifier.size(18.dp), tint = StatusRed)
+                            }
+                        }
+                    }
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = newGroupName,
+                        onValueChange = { newGroupName = it },
+                        placeholder = { Text("新合集名称", fontSize = 13.sp) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Blue600,
+                            unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f)
+                        )
+                    )
+                    Button(
+                        onClick = {
+                            if (newGroupName.isNotBlank()) {
+                                onCreateGroup(newGroupName.trim())
+                                newGroupName = ""
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Blue600)
+                    ) {
+                        Text("新建", fontSize = 13.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("关闭") }
+        }
+    )
+
+    // Rename sub-dialog
+    if (renameTarget != null) {
+        AlertDialog(
+            onDismissRequest = { renameTarget = null; renameName = "" },
+            title = { Text("重命名合集") },
+            text = {
+                OutlinedTextField(
+                    value = renameName,
+                    onValueChange = { renameName = it },
+                    singleLine = true,
+                    placeholder = { Text("输入新名称") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Blue600,
+                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f)
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (renameName.isNotBlank()) {
+                        renameTarget?.let { onRenameGroup(it, renameName.trim()) }
+                        renameTarget = null
+                        renameName = ""
+                    }
+                }) { Text("确定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { renameTarget = null; renameName = "" }) { Text("取消") }
+            }
+        )
+    }
+
+    // Delete confirmation sub-dialog
+    if (deleteConfirmId != null) {
+        val groupName = groups.find { it.id == deleteConfirmId }?.name ?: "此合集"
+        AlertDialog(
+            onDismissRequest = { deleteConfirmId = null },
+            title = { Text("删除合集") },
+            text = { Text("确定删除「$groupName」？视频不会被删除，仅移出合集。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    deleteConfirmId?.let { onDeleteGroup(it) }
+                    deleteConfirmId = null
+                }) { Text("删除", color = StatusRed) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteConfirmId = null }) { Text("取消") }
+            }
+        )
     }
 }
 

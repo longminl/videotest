@@ -71,3 +71,8 @@ data class EpisodeImportItem(
     val episodeNumber: Int,
     val url: String
 )
+
+data class SearchRequest(
+    val keyword: String,
+    val sourceIds: List<Long>
+)

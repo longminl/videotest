@@ -27,6 +27,9 @@ data class ListUiState(
     // group
     val groups: List<VideoGroup> = emptyList(),
     val groupsLoading: Boolean = false,
+    val groupError: String? = null,
+    val showGroupManagementDialog: Boolean = false,
+    val groupManagementError: String? = null,
     // batch move
     val showMoveGroupDialog: Boolean = false,
     val moveGroupMessage: String? = null
@@ -46,16 +49,90 @@ class ListViewModel : ViewModel() {
 
     fun loadGroups() {
         viewModelScope.launch {
-            _uiState.update { it.copy(groupsLoading = true) }
+            _uiState.update { it.copy(groupsLoading = true, groupError = null) }
             try {
                 val result = RetrofitClient.getApiService().getGroupList()
                 if (result.isSuccess) {
                     _uiState.update { it.copy(groups = result.data ?: emptyList(), groupsLoading = false) }
                 } else {
-                    _uiState.update { it.copy(groupsLoading = false) }
+                    _uiState.update { it.copy(groupsLoading = false, groupError = result.message) }
                 }
-            } catch (_: Exception) {
-                _uiState.update { it.copy(groupsLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(groupsLoading = false, groupError = e.message ?: "加载合集失败") }
+            }
+        }
+    }
+
+    fun openGroupManagement() {
+        loadGroups()
+        _uiState.update { it.copy(showGroupManagementDialog = true, groupManagementError = null) }
+    }
+
+    fun dismissGroupManagement() {
+        _uiState.update { it.copy(showGroupManagementDialog = false, groupManagementError = null) }
+    }
+
+    fun createGroup(name: String) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(groupManagementError = null) }
+            try {
+                val group = VideoGroup(
+                    id = null, name = name, sourceId = null,
+                    sourceSeriesUrl = null, totalEpisodes = null,
+                    description = null, sortOrder = null,
+                    videoCount = null, sourceName = null,
+                    createdAt = null, updatedAt = null
+                )
+                val result = RetrofitClient.getApiService().createGroup(group)
+                if (result.isSuccess) {
+                    loadGroups()
+                } else {
+                    _uiState.update { it.copy(groupManagementError = result.message) }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(groupManagementError = e.message ?: "创建失败") }
+            }
+        }
+    }
+
+    fun deleteGroup(id: Long) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(groupManagementError = null) }
+            try {
+                val result = RetrofitClient.getApiService().deleteGroup(id, false)
+                if (result.isSuccess) {
+                    // 如果当前筛选的合集被删除，重置筛选
+                    val currentFilter = _uiState.value.groupIdFilter
+                    loadGroups()
+                    if (currentFilter == id) {
+                        _uiState.update { it.copy(groupIdFilter = null) }
+                        loadData()
+                    }
+                } else {
+                    _uiState.update { it.copy(groupManagementError = result.message) }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(groupManagementError = e.message ?: "删除失败") }
+            }
+        }
+    }
+
+    fun renameGroup(id: Long, newName: String) {
+        if (newName.isBlank()) return
+        val existing = _uiState.value.groups.find { it.id == id } ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(groupManagementError = null) }
+            try {
+                val group = existing.copy(name = newName)
+                val result = RetrofitClient.getApiService().updateGroup(id, group)
+                if (result.isSuccess) {
+                    loadGroups()
+                } else {
+                    _uiState.update { it.copy(groupManagementError = result.message) }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(groupManagementError = e.message ?: "重命名失败") }
             }
         }
     }

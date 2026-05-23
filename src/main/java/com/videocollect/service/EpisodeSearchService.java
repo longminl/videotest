@@ -62,6 +62,7 @@ public class EpisodeSearchService {
         } else {
             sources = videoSourceDao.findAll();
         }
+        log.info("searchAll sourceIds={}, filterActive={}, sourcesCount={}", sourceIds, sourceIds != null && !sourceIds.isEmpty(), sources.size());
         Map<Long, SourceSearchResult> grouped = new LinkedHashMap<>();
 
         for (VideoSource source : sources) {

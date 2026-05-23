@@ -152,7 +152,7 @@ interface ApiService {
     // ===== Episode Search =====
 
     @POST("/api/episode/search-all")
-    suspend fun searchAllEpisodes(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResult<Map<String, @JvmSuppressWildcards Any>>
+    suspend fun searchAllEpisodes(@Body body: SearchRequest): ApiResult<Map<String, @JvmSuppressWildcards Any>>
 
     @POST("/api/episode/search-source")
     suspend fun searchSourceEpisodes(@Body body: Map<String, String>): ApiResult<List<SearchResultItem>>

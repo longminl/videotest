@@ -3,10 +3,11 @@ package com.videocollect.app.ui.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.videocollect.app.api.RetrofitClient
-import com.google.gson.Gson
 import com.videocollect.app.api.models.*
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 data class GlobalSearchUiState(
     val keyword: String = "",
@@ -18,6 +19,8 @@ data class GlobalSearchUiState(
     val isSearching: Boolean = false,
     val searchResults: Map<Long, List<SearchResultItem>> = emptyMap(),
     val searchError: String? = null,
+    val searchProgressText: String = "",
+    val searchSourceErrors: Map<Long, String> = emptyMap(),
     // Selected result for import
     val selectedSourceId: Long? = null,
     val selectedUrl: String? = null,
@@ -104,36 +107,43 @@ class GlobalSearchViewModel : ViewModel() {
         if (sourceIds.isEmpty()) return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSearching = true, searchError = null, step = 1) }
-            try {
-                val body = mapOf<String, Any>("keyword" to keyword, "sourceIds" to sourceIds)
-                val result = RetrofitClient.getApiService().searchAllEpisodes(body)
-                if (result.isSuccess && result.data != null) {
-                    // 手动解析原始 Map，避免 Gson 复杂泛型类型擦除问题
-                    val parsed: MutableMap<Long, List<SearchResultItem>> = LinkedHashMap()
-                    val gson = Gson()
-                    for ((key, value) in result.data) {
-                        val sid = key.toLongOrNull() ?: continue
-                        val raw = gson.toJsonTree(value)
-                        try {
-                            val sr = gson.fromJson(raw, SourceSearchResult::class.java)
-                            parsed[sid] = sr.results ?: emptyList()
-                        } catch (_: Exception) {
-                            // 单个源解析失败不影响其他源
-                        }
-                    }
-                    _uiState.update {
-                        it.copy(
-                            searchResults = parsed,
-                            isSearching = false,
-                            step = 2
+            _uiState.update {
+                it.copy(
+                    isSearching = true, searchError = null,
+                    searchResults = emptyMap(), searchSourceErrors = emptyMap(),
+                    searchProgressText = "", step = 2
+                )
+            }
+
+            for ((index, sourceId) in sourceIds.withIndex()) {
+                _uiState.update {
+                    it.copy(searchProgressText = "正在搜索 (已完成 ${index}/${sourceIds.size})")
+                }
+
+                try {
+                    val result = withTimeout(20000L) {
+                        RetrofitClient.getApiService().searchSourceEpisodes(
+                            mapOf("sourceId" to sourceId.toString(), "keyword" to keyword)
                         )
                     }
-                } else {
-                    _uiState.update { it.copy(isSearching = false, searchError = result.message) }
+                    if (result.isSuccess && result.data?.isNotEmpty() == true) {
+                        _uiState.update { state ->
+                            state.copy(searchResults = state.searchResults + (sourceId to result.data))
+                        }
+                    }
+                } catch (e: TimeoutCancellationException) {
+                    _uiState.update { state ->
+                        state.copy(searchSourceErrors = state.searchSourceErrors + (sourceId to "超时"))
+                    }
+                } catch (e: Exception) {
+                    _uiState.update { state ->
+                        state.copy(searchSourceErrors = state.searchSourceErrors + (sourceId to (e.message ?: "错误")))
+                    }
                 }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isSearching = false, searchError = e.message ?: "搜索失败") }
+            }
+
+            _uiState.update {
+                it.copy(isSearching = false, searchProgressText = "已完成 (${sourceIds.size}/${sourceIds.size})")
             }
         }
     }
