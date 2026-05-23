@@ -22,6 +22,10 @@ public class VideoRecord {
     private String pageTitle;
     /** 备注 */
     private String remark;
+    /** 所属合集ID */
+    private Long groupId;
+    /** 集数（如第265集） */
+    private Integer episodeNumber;
     /** HLS ts 是否已全部缓存 */
     private Boolean isCached;
     /** 缓存文件总大小（非 DB 字段，运行时计算） */
@@ -88,6 +92,12 @@ public class VideoRecord {
 
     public String getRemark() { return remark; }
     public void setRemark(String remark) { this.remark = remark; }
+
+    public Long getGroupId() { return groupId; }
+    public void setGroupId(Long groupId) { this.groupId = groupId; }
+
+    public Integer getEpisodeNumber() { return episodeNumber; }
+    public void setEpisodeNumber(Integer episodeNumber) { this.episodeNumber = episodeNumber; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

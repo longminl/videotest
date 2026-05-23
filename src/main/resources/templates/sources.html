@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频源管理 - 视频收藏</title>
+    <link href="/lib/bootstrap-5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/lib/bootstrap-icons-1.11.3/css/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        * { font-family: system-ui, -apple-system, sans-serif; }
+        body { background: #f0f5ff; color: #1e293b; min-height: 100vh; }
+        .app-container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
+        .header-section {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-top: 3px solid #3b82f6;
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+        .header-title { font-size: 20px; font-weight: 700; color: #1e293b; }
+        .header-title i { color: #3b82f6; margin-right: 8px; }
+        .source-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+        }
+        .source-card:hover { border-color: #cbd5e1; }
+        .source-name { font-size: 15px; font-weight: 600; color: #1e293b; }
+        .source-info { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+        .source-info span { margin-right: 16px; }
+        .source-info i { margin-right: 3px; }
+        .btn-back {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 10px 18px; color: #64748b; text-decoration: none; font-size: 14px;
+            font-weight: 500; transition: all 0.2s; margin-bottom: 20px;
+        }
+        .btn-back:hover { background: #f8fafc; color: #1e293b; }
+        .input-glass {
+            background: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            color: #374151 !important;
+            border-radius: 10px !important;
+            padding: 10px 14px !important;
+            font-size: 14px !important;
+        }
+        .input-glass:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important; }
+        .tag { display:inline-block; background:#f1f5f9; border-radius:6px; padding:2px 8px; font-size:12px; color:#64748b; margin-right:4px; }
+        .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; }
+        .toast-custom {
+            border-radius: 12px; padding: 12px 18px;
+            border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            background: #ffffff !important; color: #1e293b !important; font-size: 14px;
+        }
+        .toast-custom .toast-body { display: flex; align-items: center; gap: 8px; padding: 0; }
+        .modal-custom .modal-content { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; }
+        @media (max-width: 768px) {
+            .app-container { padding: 16px 12px; }
+            .header-section { padding: 18px; }
+            .source-card { padding: 14px 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <a href="/" class="btn-back"><i class="bi bi-arrow-left"></i>返回列表</a>
+
+    <div class="header-section d-flex justify-content-between align-items-center">
+        <div class="header-title"><i class="bi bi-gear"></i>视频源管理</div>
+        <button class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:8px 16px;" onclick="openCreate()">
+            <i class="bi bi-plus-lg"></i> 新增视频源
+        </button>
+    </div>
+
+    <div id="sourceList">
+        <p style="color:#94a3b8;text-align:center;padding:30px;"><span class="spinner-border spinner-border-sm me-2"></span>加载中...</p>
+    </div>
+</div>
+
+<!-- 新增/编辑弹窗 -->
+<div class="modal fade modal-custom" id="sourceEditModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="sourceEditTitle"><i class="bi bi-gear me-2"></i>新增视频源</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="sourceEditId">
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label style="font-size:12px;color:#64748b;margin-bottom:2px;">名称 *</label>
+                        <input type="text" id="f_name" class="form-control input-glass" placeholder="czltnl">
+                    </div>
+                    <div class="col-6">
+                        <label style="font-size:12px;color:#64748b;margin-bottom:2px;">首页地址 *</label>
+                        <input type="text" id="f_homeUrl" class="form-control input-glass" placeholder="https://www.czltnl.com">
+                    </div>
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-8">
+                        <label style="font-size:12px;color:#64748b;margin-bottom:2px;">搜索API *</label>
+                        <input type="text" id="f_searchUrl" class="form-control input-glass" placeholder="/api/search?wd={keyword}">
+                    </div>
+                    <div class="col-4">
+                        <label style="font-size:12px;color:#64748b;margin-bottom:2px;">数据路径</label>
+                        <input type="text" id="f_dataPath" class="form-control input-glass" placeholder="$" value="$">
+                    </div>
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label style="font-size:12px;color:#64748b;margin-bottom:2px;">标题字段</label>
+                        <input type="text" id="f_titleField" class="form-control input-glass" value="title">
+                    </div>
+                    <div class="col-6">
+                        <label style="font-size:12px;color:#64748b;margin-bottom:2px;">链接字段</label>
+                        <input type="text" id="f_urlField" class="form-control input-glass" value="url">
+                    </div>
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label style="font-size:12px;color:#64748b;margin-bottom:2px;">集数正则 *</label>
+                        <input type="text" id="f_epPattern" class="form-control input-glass" placeholder="(\d+)-(\d+)\.html">
+                    </div>
+                    <div class="col-3">
+                        <label style="font-size:12px;color:#64748b;margin-bottom:2px;">捕获组</label>
+                        <input type="number" id="f_epGroup" class="form-control input-glass" value="2" min="1">
+                    </div>
+                    <div class="col-3">
+                        <label style="font-size:12px;color:#64748b;margin-bottom:2px;">链接区域</label>
+                        <input type="text" id="f_selector" class="form-control input-glass" placeholder="可选">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div style="flex:1;display:flex;gap:6px;">
+                    <button type="button" class="btn btn-sm" style="background:rgba(59,130,246,0.08);color:#3b82f6;border:1px solid rgba(59,130,246,0.15);border-radius:8px;" onclick="testSearchInline()"><i class="bi bi-search"></i> 测试搜索</button>
+                    <button type="button" class="btn btn-sm" style="background:rgba(234,179,8,0.1);color:#ca8a04;border:1px solid rgba(234,179,8,0.2);border-radius:8px;" onclick="testParseInline()"><i class="bi bi-list"></i> 测试解析</button>
+                </div>
+                <button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;" onclick="saveSource()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 测试搜索弹窗 -->
+<div class="modal fade modal-custom" id="testSearchModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="bi bi-search me-2"></i>测试搜索</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex gap-2 mb-3">
+                    <input type="text" id="testKeyword" class="form-control input-glass" placeholder="输入关键词测试搜索" onkeyup="if(event.key==='Enter') doTestSearch()">
+                    <button class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:8px 16px;white-space:nowrap;" onclick="doTestSearch()">搜索</button>
+                </div>
+                <div id="testSearchResults" style="max-height:40vh;overflow-y:auto;">
+                    <p style="color:#94a3b8;text-align:center;padding:16px;">输入关键词测试搜索</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 测试集数解析弹窗 -->
+<div class="modal fade modal-custom" id="testParseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="bi bi-list me-2"></i>测试集数解析</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex gap-2 mb-3">
+                    <input type="text" id="testParseUrl" class="form-control input-glass" placeholder="输入剧集主页URL" onkeyup="if(event.key==='Enter') doTestParse()">
+                    <button class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:8px 16px;white-space:nowrap;" onclick="doTestParse()">解析</button>
+                </div>
+                <div id="testParseResults" style="max-height:40vh;overflow-y:auto;">
+                    <p style="color:#94a3b8;text-align:center;padding:16px;">输入剧集主页URL测试集数解析</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script>
+    var editingSourceId = null;
+
+    document.addEventListener('DOMContentLoaded', loadSources);
+
+    function loadSources() {
+        fetch('/api/source/list')
+            .then(r => r.json())
+            .then(function(res) {
+                var list = document.getElementById('sourceList');
+                if (res.code !== 200 || !res.data || res.data.length === 0) {
+                    list.innerHTML = '<div style="text-align:center;padding:40px;"><i class="bi bi-database-slash" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:12px;"></i><p style="color:#94a3b8;">暂无视频源，点击右上角新增</p></div>';
+                    return;
+                }
+                list.innerHTML = res.data.map(function(s) {
+                    return '<div class="source-card">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                        '<div><div class="source-name"><i class="bi bi-globe2" style="color:#3b82f6;margin-right:6px;"></i>' + escapeHtml(s.name) + '</div>' +
+                        '<div class="source-info"><span><i class="bi bi-house"></i>' + escapeHtml(s.homeUrl || '-') + '</span>' +
+                        '<span><i class="bi bi-search"></i>' + escapeHtml(s.searchUrl || '-') + '</span>' +
+                        '<span><i class="bi bi-regex"></i>' + escapeHtml(s.episodePattern || '-') + '</span></div></div>' +
+                        '<div class="action-group" style="display:flex;gap:4px;flex-shrink:0;">' +
+                        '<button class="btn-action view" style="background:transparent;border:1px solid #e2e8f0;border-radius:8px;padding:5px 10px;font-size:12px;color:#3b82f6;" onclick="openTestSearch(' + s.id + ')"><i class="bi bi-search"></i></button>' +
+                        '<button class="btn-action view" style="background:transparent;border:1px solid #e2e8f0;border-radius:8px;padding:5px 10px;font-size:12px;color:#ca8a04;" onclick="openTestParse(' + s.id + ')"><i class="bi bi-list"></i></button>' +
+                        '<button class="btn-action view" style="background:transparent;border:1px solid #e2e8f0;border-radius:8px;padding:5px 10px;font-size:12px;color:#64748b;" onclick="openEdit(' + s.id + ')"><i class="bi bi-pencil"></i></button>' +
+                        '<button class="btn-action del" style="background:transparent;border:1px solid #e2e8f0;border-radius:8px;padding:5px 10px;font-size:12px;color:#dc2626;" onclick="deleteSource(' + s.id + ')"><i class="bi bi-trash3"></i></button>' +
+                        '</div></div></div>';
+                }).join('');
+            })
+            .catch(function() {
+                document.getElementById('sourceList').innerHTML = '<p style="color:#dc2626;text-align:center;">加载失败</p>';
+            });
+    }
+
+    function openCreate() {
+        editingSourceId = null;
+        document.getElementById('sourceEditId').value = '';
+        ['f_name','f_homeUrl','f_searchUrl','f_dataPath','f_titleField','f_urlField','f_epPattern','f_selector'].forEach(function(id) {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('f_dataPath').value = '$';
+        document.getElementById('f_titleField').value = 'title';
+        document.getElementById('f_urlField').value = 'url';
+        document.getElementById('f_epGroup').value = '2';
+        document.getElementById('sourceEditTitle').innerHTML = '<i class="bi bi-gear me-2"></i>新增视频源';
+        new bootstrap.Modal(document.getElementById('sourceEditModal')).show();
+    }
+
+    function openEdit(id) {
+        editingSourceId = id;
+        fetch('/api/source/' + id)
+            .then(r => r.json())
+            .then(function(res) {
+                if (res.code !== 200 || !res.data) { showToast('加载失败', 'danger'); return; }
+                var s = res.data;
+                document.getElementById('sourceEditId').value = s.id;
+                document.getElementById('f_name').value = s.name || '';
+                document.getElementById('f_homeUrl').value = s.homeUrl || '';
+                document.getElementById('f_searchUrl').value = s.searchUrl || '';
+                document.getElementById('f_dataPath').value = s.searchDataPath || '$';
+                document.getElementById('f_titleField').value = s.searchTitleField || 'title';
+                document.getElementById('f_urlField').value = s.searchUrlField || 'url';
+                document.getElementById('f_epPattern').value = s.episodePattern || '';
+                document.getElementById('f_epGroup').value = s.episodeGroup || 2;
+                document.getElementById('f_selector').value = s.episodeSelector || '';
+                document.getElementById('sourceEditTitle').innerHTML = '<i class="bi bi-gear me-2"></i>编辑视频源';
+                new bootstrap.Modal(document.getElementById('sourceEditModal')).show();
+            });
+    }
+
+    function saveSource() {
+        var data = {
+            name: document.getElementById('f_name').value.trim(),
+            homeUrl: document.getElementById('f_homeUrl').value.trim(),
+            searchUrl: document.getElementById('f_searchUrl').value.trim(),
+            searchDataPath: document.getElementById('f_dataPath').value.trim() || '$',
+            searchTitleField: document.getElementById('f_titleField').value.trim() || 'title',
+            searchUrlField: document.getElementById('f_urlField').value.trim() || 'url',
+            episodePattern: document.getElementById('f_epPattern').value.trim(),
+            episodeGroup: parseInt(document.getElementById('f_epGroup').value) || 2,
+            episodeSelector: document.getElementById('f_selector').value.trim() || null,
+            encoding: 'UTF-8'
+        };
+        if (!data.name) { showToast('请输入名称', 'warning'); return; }
+        if (!data.homeUrl) { showToast('请输入首页地址', 'warning'); return; }
+        if (!data.searchUrl) { showToast('请输入搜索API地址', 'warning'); return; }
+
+        var id = document.getElementById('sourceEditId').value;
+        var url = id ? '/api/source/' + id : '/api/source';
+        var method = id ? 'PUT' : 'POST';
+
+        fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })
+            .then(r => r.json())
+            .then(function(res) {
+                if (res.code === 200) {
+                    showToast(res.message || '保存成功', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('sourceEditModal')).hide();
+                    loadSources();
+                } else {
+                    showToast(res.message || '保存失败', 'danger');
+                }
+            })
+            .catch(function() { showToast('请求失败', 'danger'); });
+    }
+
+    function deleteSource(id) {
+        if (!confirm('确定删除此视频源？')) return;
+        fetch('/api/source/' + id, {method:'DELETE'})
+            .then(r => r.json())
+            .then(function(res) { showToast(res.message||'删除成功', res.code===200?'success':'danger'); loadSources(); })
+            .catch(function() { showToast('删除失败', 'danger'); });
+    }
+
+    var testSourceId = null;
+
+    function openTestSearch(id) {
+        testSourceId = id;
+        document.getElementById('testKeyword').value = '';
+        document.getElementById('testSearchResults').innerHTML = '<p style="color:#94a3b8;text-align:center;padding:16px;">输入关键词测试搜索</p>';
+        new bootstrap.Modal(document.getElementById('testSearchModal')).show();
+    }
+
+    function doTestSearch() {
+        var keyword = document.getElementById('testKeyword').value.trim();
+        if (!keyword) { showToast('请输入关键词', 'warning'); return; }
+        var resultsDiv = document.getElementById('testSearchResults');
+        resultsDiv.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:16px;"><span class="spinner-border spinner-border-sm me-2"></span>搜索中...</p>';
+
+        var url = testSourceId ? '/api/source/test-search' : '/api/source/test-search-no-id';
+        var body = testSourceId ? {sourceId: testSourceId, keyword: keyword} : getInlineSourceConfig(keyword);
+
+        fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)})
+            .then(r => r.json())
+            .then(function(res) {
+                if (res.code === 200 && res.data) {
+                    if (res.data.length === 0) {
+                        resultsDiv.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:16px;">未找到结果</p>';
+                    } else {
+                        resultsDiv.innerHTML = '<p style="font-size:12px;color:#64748b;margin-bottom:8px;">共 ' + res.data.length + ' 条结果：</p>' +
+                            res.data.map(function(item, idx) {
+                                return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #f1f5f9;">' +
+                                    '<span style="font-size:12px;color:#94a3b8;width:24px;">' + (idx+1) + '</span>' +
+                                    '<span style="font-size:14px;color:#1e293b;flex:1;">' + escapeHtml(item.title || '') + '</span>' +
+                                    '<span style="font-size:12px;color:#94a3b8;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(item.url || '') + '</span>' +
+                                    '</div>';
+                            }).join('');
+                    }
+                } else {
+                    resultsDiv.innerHTML = '<p style="color:#dc2626;text-align:center;">搜索失败: ' + escapeHtml(res.message||'') + '</p>';
+                }
+            })
+            .catch(function() { resultsDiv.innerHTML = '<p style="color:#dc2626;text-align:center;">请求失败</p>'; });
+    }
+
+    function openTestParse(id) {
+        testSourceId = id;
+        document.getElementById('testParseUrl').value = '';
+        document.getElementById('testParseResults').innerHTML = '<p style="color:#94a3b8;text-align:center;padding:16px;">输入剧集主页URL测试集数解析</p>';
+        new bootstrap.Modal(document.getElementById('testParseModal')).show();
+    }
+
+    function doTestParse() {
+        var url = document.getElementById('testParseUrl').value.trim();
+        if (!url) { showToast('请输入剧集主页URL', 'warning'); return; }
+        var resultsDiv = document.getElementById('testParseResults');
+        resultsDiv.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:16px;"><span class="spinner-border spinner-border-sm me-2"></span>解析中...</p>';
+
+        var api = testSourceId ? '/api/source/test-parse' : '/api/source/test-parse-no-id';
+        var body = testSourceId ? {sourceId: testSourceId, seriesUrl: url} : getInlineParseConfig(url);
+
+        fetch(api, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)})
+            .then(r => r.json())
+            .then(function(res) {
+                if (res.code === 200 && res.data) {
+                    if (res.data.length === 0) {
+                        resultsDiv.innerHTML = '<p style="color:#ca8a04;text-align:center;padding:16px;">未识别到集数，请检查正则表达式</p>';
+                    } else {
+                        resultsDiv.innerHTML = '<p style="font-size:12px;color:#64748b;margin-bottom:8px;">共 ' + res.data.length + ' 集（显示前50集）：</p>' +
+                            res.data.slice(0, 50).map(function(ep) {
+                                return '<div style="display:flex;align-items:center;gap:8px;padding:4px 10px;border-bottom:1px solid #f1f5f9;font-size:13px;">' +
+                                    '<span style="color:#3b82f6;font-weight:600;min-width:50px;">第' + ep.episodeNumber + '集</span>' +
+                                    '<span style="color:#94a3b8;overflow:hidden;text-overflow:ellipsis;max-width:400px;white-space:nowrap;">' + escapeHtml(ep.url||'') + '</span>' +
+                                    '</div>';
+                            }).join('') +
+                            (res.data.length > 50 ? '<p style="font-size:12px;color:#94a3b8;padding:8px;">... 还有 ' + (res.data.length-50) + ' 集</p>' : '');
+                    }
+                } else {
+                    resultsDiv.innerHTML = '<p style="color:#dc2626;text-align:center;">解析失败: ' + escapeHtml(res.message||'') + '</p>';
+                }
+            })
+            .catch(function() { resultsDiv.innerHTML = '<p style="color:#dc2626;text-align:center;">请求失败</p>'; });
+    }
+
+    function getInlineSourceConfig(keyword) {
+        return {
+            keyword: keyword,
+            homeUrl: document.getElementById('f_homeUrl').value.trim(),
+            searchUrl: document.getElementById('f_searchUrl').value.trim(),
+            searchDataPath: document.getElementById('f_dataPath').value.trim() || '$',
+            titleField: document.getElementById('f_titleField').value.trim() || 'title',
+            urlField: document.getElementById('f_urlField').value.trim() || 'url'
+        };
+    }
+
+    function getInlineParseConfig(seriesUrl) {
+        return {
+            seriesUrl: seriesUrl,
+            homeUrl: document.getElementById('f_homeUrl').value.trim(),
+            episodePattern: document.getElementById('f_epPattern').value.trim(),
+            episodeGroup: parseInt(document.getElementById('f_epGroup').value) || 1
+        };
+    }
+
+    function testSearchInline() {
+        var keyword = prompt('输入测试关键词：', '狂飙');
+        if (!keyword) return;
+        testSourceId = null;
+        openTestSearch(null);
+        document.getElementById('testKeyword').value = keyword;
+        doTestSearch();
+    }
+
+    function testParseInline() {
+        var url = prompt('输入剧集主页URL：', '');
+        if (!url) return;
+        testSourceId = null;
+        openTestParse(null);
+        document.getElementById('testParseUrl').value = url;
+        doTestParse();
+    }
+
+    function showToast(message, type) {
+        const icons = { success:'bi-check-circle-fill', danger:'bi-x-circle-fill', warning:'bi-exclamation-circle-fill', info:'bi-info-circle-fill' };
+        const colors = { success:'#16a34a', danger:'#dc2626', warning:'#ca8a04', info:'#3b82f6' };
+        const c = colors[type] || '#3b82f6';
+        const ic = icons[type] || 'bi-info-circle-fill';
+        const id = 't-' + Date.now();
+        const html = '<div id="' + id + '" class="toast toast-custom align-items-center border-0" role="alert">' +
+            '<div class="d-flex align-items-center gap-2">' +
+            '<i class="bi ' + ic + '" style="color:' + c + ';font-size:18px;"></i>' +
+            '<div class="toast-body" style="padding:0;">' + message + '</div>' +
+            '<button type="button" class="btn-close btn-close-white ms-2" style="font-size:12px;opacity:0.5;" data-bs-dismiss="toast"></button>' +
+            '</div></div>';
+        document.getElementById('toastContainer').insertAdjacentHTML('beforeend', html);
+        const el = document.getElementById(id);
+        new bootstrap.Toast(el, {delay:3000}).show();
+        el.addEventListener('hidden.bs.toast', function() { el.remove(); });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        var d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+    }
+</script>
+<script src="/lib/bootstrap-5.3.3/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

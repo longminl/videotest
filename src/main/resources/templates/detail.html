@@ -355,6 +355,14 @@
                     <div class="info-label">网页标题</div>
                     <div class="info-value" th:text="${record.pageTitle ?: '-'}">-</div>
                 </div>
+                <div class="info-item" id="groupInfoRow" style="display:none;">
+                    <div class="info-label">合集</div>
+                    <div class="info-value" id="groupInfoValue">-</div>
+                </div>
+                <div class="info-item" id="episodeInfoRow" style="display:none;">
+                    <div class="info-label">集数</div>
+                    <div class="info-value" id="episodeInfoValue">-</div>
+                </div>
                 <div class="info-item info-full">
                     <div class="info-label">来源网址</div>
                     <div class="info-value"><a th:href="${record.sourceUrl}" target="_blank" th:text="${record.sourceUrl}">-</a></div>
@@ -413,6 +421,12 @@
             </button>
             <button class="btn-action-primary btn-recheck" onclick="recheck(${record.id})">
                 <i class="bi bi-arrow-repeat"></i>重新检测
+            </button>
+            <button class="btn-action-primary" style="background:rgba(59,130,246,0.08);color:#3b82f6;" onclick="moveToGroup(${record.id})">
+                <i class="bi bi-folder"></i>合集
+            </button>
+            <button class="btn-action-primary" style="background:rgba(234,179,8,0.1);color:#ca8a04;" onclick="checkNextEpisode(${record.id})">
+                <i class="bi bi-arrow-right-circle"></i>下集
             </button>
             <button class="btn-action-primary btn-delete" onclick="deleteRecord(${record.id})">
                 <i class="bi bi-trash3"></i>删除记录
@@ -595,6 +609,132 @@
                 else { showToast(res.message || '删除失败', 'danger'); }
             })
             .catch(() => showToast('删除失败', 'danger'));
+    }
+
+    // ===== 合集信息 =====
+    (function() {
+        var groupId = '[[${record.groupId}]]';
+        var episodeNumber = '[[${record.episodeNumber}]]';
+        if (groupId && groupId !== 'null' && groupId !== '') {
+            fetch('/api/group/' + groupId)
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.code === 200 && res.data) {
+                        document.getElementById('groupInfoRow').style.display = '';
+                        document.getElementById('groupInfoValue').textContent = res.data.name;
+                        document.getElementById('episodeInfoRow').style.display = '';
+                        document.getElementById('episodeInfoValue').textContent = episodeNumber && episodeNumber !== 'null' ? '第' + episodeNumber + '集' : '-';
+                    }
+                })
+                .catch(function() {});
+        }
+    })();
+
+    function moveToGroup(id) {
+        // 加载合集列表让用户选择
+        fetch('/api/group/list')
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.code !== 200 || !res.data) { showToast('加载合集列表失败', 'danger'); return; }
+                var groups = res.data;
+                var html = '<div style="padding:10px 0;">';
+                if (groups.length === 0) {
+                    html += '<p style="color:#94a3b8;text-align:center;">暂无合集，请先在列表页创建</p>';
+                } else {
+                    groups.forEach(function(g) {
+                        html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;cursor:pointer;" ' +
+                            'onclick="doMoveToGroup(' + id + ',' + g.id + ',\'' + escapeHtml(g.name) + '\')">' +
+                            '<div><strong style="font-size:14px;">' + escapeHtml(g.name) + '</strong>' +
+                            '<span style="font-size:12px;color:#94a3b8;margin-left:10px;">' + (g.videoCount||0) + ' 个视频</span></div>' +
+                            '<span style="color:#3b82f6;font-size:13px;">移动 →</span>' +
+                            '</div>';
+                    });
+                }
+                html += '<div style="text-align:center;margin-top:12px;"><button class="btn-action" onclick="doUnlinkVideo(' + id + ')"><i class="bi bi-folder-minus"></i> 从合集中移除</button></div>';
+                html += '</div>';
+
+                var modal = document.createElement('div');
+                modal.className = 'modal fade modal-custom';
+                modal.id = 'moveGroupModal';
+                modal.innerHTML = '<div class="modal-dialog modal-dialog-centered"><div class="modal-content">' +
+                    '<div class="modal-header"><h6 class="modal-title"><i class="bi bi-folder me-2"></i>移动到合集</h6>' +
+                    '<button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>' +
+                    '<div class="modal-body">' + html + '</div>' +
+                    '<div class="modal-footer"><button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">取消</button></div></div></div>';
+                document.body.appendChild(modal);
+                new bootstrap.Modal(modal).show();
+                modal.addEventListener('hidden.bs.modal', function() { modal.remove(); });
+            });
+    }
+
+    function doMoveToGroup(videoId, groupId, groupName) {
+        fetch('/api/group/move-video', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({videoId: videoId, groupId: groupId})
+        }).then(function(r) { return r.json(); }).then(function(res) {
+            showToast(res.message || '移动成功', res.code === 200 ? 'success' : 'danger');
+            var m = document.getElementById('moveGroupModal');
+            if (m) { bootstrap.Modal.getInstance(m).hide(); }
+            if (res.code === 200) { setTimeout(function() { location.reload(); }, 1000); }
+        }).catch(function() { showToast('请求失败', 'danger'); });
+    }
+
+    function doUnlinkVideo(videoId) {
+        if (!confirm('确定从合集中移除此视频？')) return;
+        fetch('/api/group/unlink-video/' + videoId, {method: 'PUT'})
+            .then(function(r) { return r.json(); }).then(function(res) {
+                showToast(res.message || '已移除', res.code === 200 ? 'success' : 'danger');
+                var m = document.getElementById('moveGroupModal');
+                if (m) { bootstrap.Modal.getInstance(m).hide(); }
+                if (res.code === 200) { setTimeout(function() { location.reload(); }, 1000); }
+            }).catch(function() { showToast('请求失败', 'danger'); });
+    }
+
+    function checkNextEpisode(id) {
+        fetch('/api/episode/next/' + id)
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.code === 200 && res.data) {
+                    var d = res.data;
+                    if (d.nextEpisodeNumber) {
+                        if (d.message === '已收录') {
+                            showToast('第 ' + d.nextEpisodeNumber + ' 集已收录', 'success');
+                        } else if (d.nextUrl) {
+                            if (confirm('发现第 ' + d.nextEpisodeNumber + ' 集（' + d.nextUrl + '）\n是否导入？')) {
+                                // 快速导入
+                                var title = document.querySelector('.detail-title')?.textContent || '视频';
+                                var baseTitle = title.replace(/第\d+集.*$/, '').trim();
+                                if (!baseTitle) baseTitle = title;
+                                // 获取 groupId
+                                var groupId = '[[${record.groupId}]]';
+                                if (groupId && groupId !== 'null') {
+                                    fetch('/api/episode/import', {
+                                        method: 'POST',
+                                        headers: {'Content-Type': 'application/json'},
+                                        body: JSON.stringify({
+                                            groupId: parseInt(groupId),
+                                            episodes: [{episodeNumber: d.nextEpisodeNumber, url: d.nextUrl}]
+                                        })
+                                    }).then(function(r) { return r.json(); }).then(function(r) {
+                                        showToast(r.message || '导入完成', r.code === 200 ? 'success' : 'danger');
+                                        if (r.code === 200) setTimeout(function() { location.reload(); }, 1000);
+                                    });
+                                } else {
+                                    showToast('该视频不在合集中，请先添加到合集', 'warning');
+                                }
+                            }
+                        } else {
+                            showToast('无法推断下一集地址', 'warning');
+                        }
+                    } else {
+                        showToast(d.message || '无法检测', 'warning');
+                    }
+                } else {
+                    showToast(res.message || '检测失败', 'danger');
+                }
+            })
+            .catch(function() { showToast('请求失败', 'danger'); });
     }
 
     function downloadVideo(id) {

@@ -13,6 +13,8 @@
         <result column="latency_ms" property="latencyMs"/>
         <result column="page_title" property="pageTitle"/>
         <result column="remark" property="remark"/>
+        <result column="group_id" property="groupId"/>
+        <result column="episode_number" property="episodeNumber"/>
         <result column="is_cached" property="isCached"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
@@ -20,7 +22,7 @@
 
     <sql id="baseColumns">
         id, title, source_url, video_url, status, latency_ms,
-        page_title, remark, is_cached, created_at, updated_at
+        page_title, remark, group_id, episode_number, is_cached, created_at, updated_at
     </sql>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
@@ -57,10 +59,14 @@
                 OR source_url LIKE #{likePattern}
                 OR video_url LIKE #{likePattern})
             </if>
+            <if test="groupId != null">
+                AND group_id = #{groupId}
+            </if>
         </where>
         ORDER BY
         <choose>
             <when test="sortBy == 'title'">title</when>
+            <when test="sortBy == 'episode_number'">episode_number</when>
             <otherwise>created_at</otherwise>
         </choose>
         <choose>
@@ -82,6 +88,9 @@
                 OR page_title LIKE #{likePattern}
                 OR source_url LIKE #{likePattern}
                 OR video_url LIKE #{likePattern})
+            </if>
+            <if test="groupId != null">
+                AND group_id = #{groupId}
             </if>
         </where>
     </select>
@@ -123,6 +132,44 @@
         SELECT <include refid="baseColumns"/> FROM video_collection
         WHERE status IN (0, 2)
         ORDER BY created_at DESC
+    </select>
+
+    <!-- ====== 合集/集数相关 ====== -->
+
+    <select id="findByGroupId" resultMap="baseMap">
+        SELECT <include refid="baseColumns"/> FROM video_collection
+        WHERE group_id = #{groupId}
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'episode_number'">episode_number</when>
+            <otherwise>created_at</otherwise>
+        </choose>
+        <choose>
+            <when test="sortOrder == 'desc'">DESC</when>
+            <otherwise>ASC</otherwise>
+        </choose>
+    </select>
+
+    <update id="updateGroup">
+        UPDATE video_collection SET group_id = #{groupId}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updateEpisodeNumber">
+        UPDATE video_collection SET episode_number = #{episodeNumber}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <select id="findMaxEpisodeNumber" resultType="int">
+        SELECT MAX(episode_number) FROM video_collection WHERE group_id = #{groupId}
+    </select>
+
+    <select id="countByGroupId" resultType="int">
+        SELECT COUNT(*) FROM video_collection WHERE group_id = #{groupId}
+    </select>
+
+    <select id="findByGroupAndEpisode" resultMap="baseMap">
+        SELECT <include refid="baseColumns"/> FROM video_collection
+        WHERE group_id = #{groupId} AND episode_number = #{episodeNumber}
+        LIMIT 1
     </select>
 
 </mapper>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.videocollect.dao.VideoSourceDao">
+
+    <resultMap id="baseMap" type="VideoSource">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="home_url" property="homeUrl"/>
+        <result column="search_url" property="searchUrl"/>
+        <result column="search_data_path" property="searchDataPath"/>
+        <result column="search_title_field" property="searchTitleField"/>
+        <result column="search_url_field" property="searchUrlField"/>
+        <result column="search_cover_field" property="searchCoverField"/>
+        <result column="episode_pattern" property="episodePattern"/>
+        <result column="episode_group" property="episodeGroup"/>
+        <result column="episode_selector" property="episodeSelector"/>
+        <result column="encoding" property="encoding"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, name, home_url, search_url, search_data_path,
+        search_title_field, search_url_field, search_cover_field,
+        episode_pattern, episode_group, episode_selector, encoding,
+        sort_order, created_at, updated_at
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO video_source (name, home_url, search_url, search_data_path,
+            search_title_field, search_url_field, search_cover_field,
+            episode_pattern, episode_group, episode_selector, encoding, sort_order)
+        VALUES (#{name}, #{homeUrl}, #{searchUrl}, #{searchDataPath},
+            #{searchTitleField}, #{searchUrlField}, #{searchCoverField},
+            #{episodePattern}, #{episodeGroup}, #{episodeSelector}, #{encoding}, #{sortOrder})
+    </insert>
+
+    <select id="findById" resultMap="baseMap">
+        SELECT <include refid="baseColumns"/> FROM video_source WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="baseMap">
+        SELECT <include refid="baseColumns"/> FROM video_source ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <update id="update">
+        UPDATE video_source
+        SET name = #{name}, home_url = #{homeUrl}, search_url = #{searchUrl},
+            search_data_path = #{searchDataPath},
+            search_title_field = #{searchTitleField},
+            search_url_field = #{searchUrlField},
+            search_cover_field = #{searchCoverField},
+            episode_pattern = #{episodePattern},
+            episode_group = #{episodeGroup},
+            episode_selector = #{episodeSelector},
+            encoding = #{encoding},
+            sort_order = #{sortOrder},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM video_source WHERE id = #{id}
+    </delete>
+
+</mapper>

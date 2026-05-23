@@ -222,6 +222,29 @@
         .btn-action.del:hover { background: rgba(239,68,68,0.1); color: #dc2626; border-color: rgba(239,68,68,0.2); }
         .btn-action i { font-size: 14px; }
 
+        /* 合集栏 */
+        .group-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding: 10px 14px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+        }
+        .group-selector {
+            display: flex;
+            align-items: center;
+        }
+        .group-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
         /* 分页 */
         .pagination-custom {
             display: flex;
@@ -337,36 +360,36 @@
             .pagination-custom { flex-direction: column; gap: 8px; align-items: center; }
             .page-info { font-size: 12px; }
             /* 操作列悬浮跟随滚动 */
-            .table-card thead th:nth-child(8),
-            .table-card tbody td:nth-child(8) {
+            .table-card thead th:nth-child(10),
+            .table-card tbody td:nth-child(10) {
                 position: sticky;
                 right: 0;
                 z-index: 1;
                 background: #ffffff;
             }
-            .table-card tbody td:nth-child(8) {
+            .table-card tbody td:nth-child(10) {
                 box-shadow: -4px 0 12px rgba(0,0,0,0.08);
             }
-            .table-card tbody tr:hover td:nth-child(8) {
+            .table-card tbody tr:hover td:nth-child(10) {
                 background: rgba(59,130,246,0.04);
             }
             /* 手机端列宽收窄（!important 压制 th 内联样式） */
             .table-card thead th:nth-child(2),
-            .table-card tbody td:nth-child(2) { width: 35px !important; min-width: 35px; }
+            .table-card tbody td:nth-child(2) { width: 32px !important; min-width: 32px; }
             .table-card thead th:nth-child(4),
-            .table-card tbody td:nth-child(4) { width: 90px !important; min-width: 90px; }
+            .table-card tbody td:nth-child(4) { width: 60px !important; min-width: 60px; }
             .table-card thead th:nth-child(5),
-            .table-card tbody td:nth-child(5) { display: none; }
+            .table-card tbody td:nth-child(5) { width: 36px !important; min-width: 36px; }
             .table-card thead th:nth-child(6),
             .table-card tbody td:nth-child(6) { width: 75px !important; min-width: 75px; }
-            .table-card thead th:nth-child(7),
-            .table-card tbody td:nth-child(7) { width: 80px !important; min-width: 80px; }
             .table-card thead th:nth-child(8),
-            .table-card tbody td:nth-child(8) { width: 95px !important; min-width: 95px; }
+            .table-card tbody td:nth-child(8) { width: 65px !important; min-width: 65px; }
             .table-card thead th:nth-child(9),
-            .table-card tbody td:nth-child(9) { display: none; }
+            .table-card tbody td:nth-child(9) { width: 45px !important; min-width: 45px; }
             .table-card thead th:nth-child(10),
             .table-card tbody td:nth-child(10) { width: 140px !important; min-width: 140px; }
+            .table-card thead th:nth-child(11),
+            .table-card tbody td:nth-child(11) { width: 110px !important; min-width: 110px; }
         }
 
         /* 手机 */
@@ -381,8 +404,10 @@
             .table-card { border-radius: 10px; }
             .table-card thead th { font-size: 11px; padding: 8px 6px; }
             .table-card tbody td { padding: 8px 6px; font-size: 12px; }
-            .table-card thead th:nth-child(9),
-            .table-card tbody td:nth-child(9) { display: none; }  /* 隐藏来源列 */
+            .table-card thead th:nth-child(7),
+            .table-card tbody td:nth-child(7) { display: none; }  /* 隐藏延迟列 */
+            .table-card thead th:nth-child(11),
+            .table-card tbody td:nth-child(11) { display: none; }  /* 隐藏收录时间 */
             .latency-text { font-size: 12px; }
             .cache-cell { font-size: 11px; }
             .cache-bar-mini .track { width: 36px; }
@@ -409,12 +434,12 @@
             .filter-pill { font-size: 11px; padding: 5px 8px; }
             .table-card thead th,
             .table-card tbody td { padding: 6px 4px; font-size: 11px; }
-            .table-card thead th:nth-child(5),
-            .table-card tbody td:nth-child(5) { display: none; }  /* 隐藏延迟列 */
-            .table-card thead th:nth-child(9),
-            .table-card tbody td:nth-child(9),
-            .table-card thead th:nth-child(10),
-            .table-card tbody td:nth-child(10) { display: none; }  /* 隐藏来源+收录时间 */
+            .table-card thead th:nth-child(4),
+            .table-card tbody td:nth-child(4) { display: none; }  /* 隐藏合集列 */
+            .table-card thead th:nth-child(7),
+            .table-card tbody td:nth-child(7) { display: none; }  /* 隐藏延迟列 */
+            .table-card thead th:nth-child(11),
+            .table-card tbody td:nth-child(11) { display: none; }  /* 隐藏收录时间 */
             .status-pill { font-size: 10px; padding: 2px 6px; }
             .action-group { gap: 5px; }
             .btn-action { padding: 6px 9px; font-size: 10px; border-radius: 6px; }
@@ -556,31 +581,52 @@
     </div>
 
     <!-- 筛选栏 -->
-    <div class="filter-bar">
-        <div class="filter-pills">
-            <a class="filter-pill" th:classappend="${param.status == null ? 'active' : ''}"
-               th:href="@{/(keyword=${param.keyword})}"><span class="dot" style="background:#64748b"></span>全部</a>
-            <a class="filter-pill" th:classappend="${param.status == '1' ? 'active' : ''}"
-               th:href="@{/(status=1, keyword=${param.keyword})}"><span class="dot" style="background:#16a34a"></span>可播放</a>
-            <a class="filter-pill" th:classappend="${param.status == '2' ? 'active' : ''}"
-               th:href="@{/(status=2, keyword=${param.keyword})}"><span class="dot" style="background:#dc2626"></span>不可播放</a>
-            <a class="filter-pill" th:classappend="${param.status == '0' ? 'active' : ''}"
-               th:href="@{/(status=0, keyword=${param.keyword})}"><span class="dot" style="background:#94a3b8"></span>未检测</a>
-            <a class="filter-pill" th:classappend="${param.status == '3' ? 'active' : ''}"
-               th:href="@{/(status=3, keyword=${param.keyword})}"><span class="dot" style="background:#ca8a04"></span>解析失败</a>
+        <div class="filter-bar">
+            <div class="filter-pills">
+                <a class="filter-pill" th:classappend="${param.status == null ? 'active' : ''}"
+                   th:href="@{/(keyword=${param.keyword})}"><span class="dot" style="background:#64748b"></span>全部</a>
+                <a class="filter-pill" th:classappend="${param.status == '1' ? 'active' : ''}"
+                   th:href="@{/(status=1, keyword=${param.keyword})}"><span class="dot" style="background:#16a34a"></span>可播放</a>
+                <a class="filter-pill" th:classappend="${param.status == '2' ? 'active' : ''}"
+                   th:href="@{/(status=2, keyword=${param.keyword})}"><span class="dot" style="background:#dc2626"></span>不可播放</a>
+                <a class="filter-pill" th:classappend="${param.status == '0' ? 'active' : ''}"
+                   th:href="@{/(status=0, keyword=${param.keyword})}"><span class="dot" style="background:#94a3b8"></span>未检测</a>
+                <a class="filter-pill" th:classappend="${param.status == '3' ? 'active' : ''}"
+                   th:href="@{/(status=3, keyword=${param.keyword})}"><span class="dot" style="background:#ca8a04"></span>解析失败</a>
+            </div>
+            <div class="search-group">
+                <button id="batchDeleteBtn" class="btn-action del" onclick="batchDelete()" style="display:none;">
+                    <i class="bi bi-trash3"></i>批量删除
+                </button>
+                <button id="checkAllBtn" class="btn-recheck" onclick="recheckAll()">
+                    <i class="bi bi-arrow-repeat"></i>批量检测
+                </button>
+                <button class="btn-recheck" onclick="openSourceMgr()">
+                    <i class="bi bi-gear"></i>视频源
+                </button>
+                <button class="btn-recheck" onclick="openGlobalSearch()">
+                    <i class="bi bi-search"></i>总搜索
+                </button>
+                <input type="text" id="searchInput" class="search-input" placeholder="搜索标题或URL..."
+                       th:value="${param.keyword}" onkeyup="if(event.key==='Enter') search()">
+                <button class="btn-search" onclick="search()"><i class="bi bi-search"></i></button>
+            </div>
         </div>
-        <div class="search-group">
-            <button id="batchDeleteBtn" class="btn-action del" onclick="batchDelete()" style="display:none;">
-                <i class="bi bi-trash3"></i>批量删除
-            </button>
-            <button id="checkAllBtn" class="btn-recheck" onclick="recheckAll()">
-                <i class="bi bi-arrow-repeat"></i>批量检测
-            </button>
-            <input type="text" id="searchInput" class="search-input" placeholder="搜索标题或URL..."
-                   th:value="${param.keyword}" onkeyup="if(event.key==='Enter') search()">
-            <button class="btn-search" onclick="search()"><i class="bi bi-search"></i></button>
+        <!-- 合集筛选 + 合集管理 -->
+        <div class="group-bar">
+            <div class="group-selector">
+                <label style="font-size:13px;color:#64748b;margin-right:8px;white-space:nowrap;">📁 合集:</label>
+                <select id="groupFilter" class="search-input" style="width:auto;min-width:120px;padding:6px 10px;" onchange="filterByGroup()">
+                    <option value="">全部合集</option>
+                    <option value="__none">无合集</option>
+                </select>
+            </div>
+            <div class="group-actions">
+                <button class="btn-action" onclick="openGroupCreate()"><i class="bi bi-folder-plus"></i>新建合集</button>
+                <button class="btn-action" onclick="openGroupList()"><i class="bi bi-folder"></i>管理合集</button>
+                <button class="btn-action" onclick="openBatchImport()"><i class="bi bi-upload"></i>批量导入</button>
+            </div>
         </div>
-    </div>
 
     <!-- 表格 -->
     <div class="table-card">
@@ -588,15 +634,16 @@
             <thead>
                 <tr>
                     <th style="width:36px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="cursor:pointer;"></th>
-                    <th style="width:48px">#</th>
+                    <th style="width:40px">#</th>
                     <th>标题</th>
-                    <th style="width:110px">状态</th>
-                    <th style="width:80px">延迟</th>
-                    <th style="width:90px">缓存</th>
-                    <th style="width:105px">缓存大小</th>
-                    <th style="width:180px">操作</th>
-                    <th style="width:6%">来源</th>
-                    <th style="width:140px">收录时间</th>
+                    <th style="width:70px">合集</th>
+                    <th style="width:52px">集数</th>
+                    <th style="width:90px">状态</th>
+                    <th style="width:65px">延迟</th>
+                    <th style="width:75px">缓存</th>
+                    <th style="width:60px">下集</th>
+                    <th style="width:160px">操作</th>
+                    <th style="width:120px">收录时间</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
@@ -637,6 +684,96 @@
         </div>
     </div>
 
+    <!-- 合集管理弹窗（新建/编辑） -->
+    <div class="modal fade modal-custom" id="groupEditModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title" id="groupEditTitle"><i class="bi bi-folder me-2"></i>新建合集</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="groupEditId">
+                    <div class="mb-3">
+                        <label style="font-size:13px;color:#64748b;margin-bottom:4px;">合集名称 *</label>
+                        <input type="text" id="groupEditName" class="form-control input-glass" placeholder="如：狂飙">
+                    </div>
+                    <div class="mb-3">
+                        <label style="font-size:13px;color:#64748b;margin-bottom:4px;">描述（可选）</label>
+                        <input type="text" id="groupEditDesc" class="form-control input-glass" placeholder="简短描述">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;" onclick="saveGroup()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 合集列表管理弹窗 -->
+    <div class="modal fade modal-custom" id="groupListModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title"><i class="bi bi-folder me-2"></i>管理合集</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
+                    <div id="groupListContent"><p style="color:#94a3b8;text-align:center;">加载中...</p></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;" onclick="openGroupCreate()">+ 新建合集</button>
+                    <button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 总搜索弹窗 -->
+    <div class="modal fade modal-custom" id="globalSearchModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title"><i class="bi bi-search me-2"></i>总搜索</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex gap-2 mb-3">
+                        <input type="text" id="globalSearchInput" class="form-control input-glass" placeholder="输入关键词搜索所有视频源..." onkeyup="if(event.key==='Enter') doGlobalSearch()">
+                        <button class="btn btn-collect" style="padding:10px 20px;white-space:nowrap;" onclick="doGlobalSearch()"><i class="bi bi-search"></i> 搜索</button>
+                    </div>
+                    <div id="globalSearchResults" style="max-height:50vh;overflow-y:auto;">
+                        <p style="color:#94a3b8;text-align:center;padding:20px;">输入关键词开始搜索</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div id="globalSearchSelected" style="font-size:13px;color:#64748b;flex:1;"></div>
+                    <button type="button" class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;display:none;" id="globalImportBtn" onclick="globalImportSelected()">导入选中</button>
+                    <button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量导入向导弹窗 -->
+    <div class="modal fade modal-custom" id="batchImportModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title" id="importStepTitle"><i class="bi bi-upload me-2"></i>批量导入</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="importStepBody">
+                    <!-- 由 JS 动态渲染 -->
+                </div>
+                <div class="modal-footer" id="importStepFooter">
+                    <button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 播放模态框 -->
     <div class="modal fade modal-player" id="playModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -672,12 +809,16 @@
     var cachePollTimers = {};
     var cacheProgress = {};
     var isMobile = /Mobi|Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    var groupMap = {};  // id → {name, videoCount}
+    var currentGroupFilter = '';
 
     document.addEventListener('DOMContentLoaded', function () {
         const params = new URLSearchParams(window.location.search);
         currentStatus = params.get('status') ? parseInt(params.get('status')) : null;
         currentKeyword = params.get('keyword') || '';
+        currentGroupFilter = params.get('groupId') || '';
         if (currentKeyword) document.getElementById('searchInput').value = currentKeyword;
+        loadGroups();
         loadData(1);
         document.getElementById('collectForm').addEventListener('submit', function (e) {
             e.preventDefault();
@@ -688,14 +829,29 @@
         });
     });
 
+    function loadGroups() {
+        fetch('/api/group/list')
+            .then(r => r.json())
+            .then(res => {
+                if (res.code === 200 && res.data) {
+                    var sel = document.getElementById('groupFilter');
+                    groupMap = {};
+                    res.data.forEach(function(g) {
+                        groupMap[g.id] = { name: g.name, videoCount: g.videoCount || 0 };
+                        sel.innerHTML += '<option value="' + g.id + '">' + escapeHtml(g.name) + ' (' + (g.videoCount||0) + ')</option>';
+                    });
+                    if (currentGroupFilter) sel.value = currentGroupFilter;
+                }
+            });
+    }
+
     function loadData(page) {
         currentPage = page;
         const params = new URLSearchParams({ page, pageSize });
         if (currentStatus !== null) params.set('status', currentStatus);
         if (currentKeyword) params.set('keyword', currentKeyword);
-
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '<tr><td colspan="9" class="py-5 text-center" style="color:#94a3b8"><div class="skeleton" style="height:20px;width:60%;margin:0 auto"></div></td></tr>';
+        var gid = document.getElementById('groupFilter').value;
+        if (gid && gid !== '__none') params.set('groupId', gid);
 
         fetch('/api/list?' + params.toString())
             .then(r => r.json())
@@ -732,8 +888,17 @@
             const st = item.status === 0 ? '未检测' : item.status === 1 ? '可播放' : item.status === 2 ? '不可播放' : '解析失败';
             const lt = item.latencyMs != null ? item.latencyMs + 'ms' : '-';
             const ct = item.createdAt ? item.createdAt.substring(0, 16).replace('T', ' ') : '-';
-            const ttl = item.title && item.title.length > 32 ? item.title.substring(0, 32) + '...' : (item.title || '未命名');
-            const src = item.sourceUrl && item.sourceUrl.length > 32 ? item.sourceUrl.substring(0, 32) + '...' : (item.sourceUrl || '-');
+            const ttl = item.title && item.title.length > 28 ? item.title.substring(0, 28) + '...' : (item.title || '未命名');
+            // 合集信息
+            var gName = '';
+            if (item.groupId && groupMap[item.groupId]) {
+                gName = groupMap[item.groupId].name;
+            } else if (item.groupId) {
+                gName = '合集#' + item.groupId;
+            } else {
+                gName = '-';
+            }
+            var epNum = item.episodeNumber != null ? item.episodeNumber : '-';
             // 缓存列内容
             const isM3u8 = item.videoUrl && item.videoUrl.indexOf('.m3u8') > 0;
             var cacheHtml;
@@ -742,13 +907,17 @@
             } else if (item.isCached) {
                 cacheHtml = '<span style="color:#16a34a;font-size:12px;"><i class="bi bi-check-circle-fill me-1"></i>已缓存</span>';
             } else if (cachePollTimers[item.id] && cacheProgress[item.id]) {
-                // 缓存进行中，显示"缓存中…"
                 cacheHtml = '<div class="cache-bar-mini" id="cache-display-' + item.id + '">' +
                     '<span class="label" style="color:#ca8a04;"><i class="bi bi-hourglass-split"></i> 缓存中…</span></div>';
             } else {
                 cacheHtml = '<div class="cache-bar-mini" id="cache-display-' + item.id + '">' +
                     '<button class="btn-action view cache-btn" onclick="startCache(' + item.id + ')" id="cache-btn-' + item.id + '"><i class="bi bi-download"></i>缓存</button>' +
                     '</div>';
+            }
+            // 下一集状态
+            var nextHtml = '<span style="color:#94a3b8;font-size:11px;">-</span>';
+            if (item.groupId && item.episodeNumber != null) {
+                nextHtml = '<button class="btn-action" style="font-size:11px;padding:3px 6px;" onclick="checkNextEpisode(' + item.id + ')" id="next-btn-' + item.id + '"><i class="bi bi-arrow-right-circle"></i></button>';
             }
             // 播放按钮
             var playHtml = '';
@@ -759,10 +928,12 @@
                 <td><input type="checkbox" class="row-checkbox" value="${item.id}" onchange="updateBatchDeleteBtn()" style="cursor:pointer;"></td>
                 <td style="color:#94a3b8;font-size:13px;">${item.id}</td>
                 <td title="${escapeHtml(item.title || '')}">${escapeHtml(ttl)}</td>
+                <td style="font-size:12px;color:#64748b;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(gName)}">${escapeHtml(gName)}</td>
+                <td style="font-size:13px;color:#475569;text-align:center;">${epNum}</td>
                 <td><span class="status-pill ${sc}"><span class="sd"></span>${st}</span></td>
                 <td class="latency-text">${lt}</td>
                 <td class="cache-cell" id="cache-cell-${item.id}">${cacheHtml}</td>
-                <td style="font-size:13px;color:#64748b;">${item.cacheSize || '-'}</td>
+                <td class="next-cell" id="next-cell-${item.id}" style="text-align:center;">${nextHtml}</td>
                 <td>
                     <div class="action-group">
                     ${playHtml}
@@ -771,7 +942,6 @@
                     <button class="btn-action del" onclick="deleteOne(${item.id})"><i class="bi bi-trash3"></i><span class="label-text">删除</span></button>
                     </div>
                 </td>
-                <td>${item.sourceUrl ? '<a class="url-link" href="' + escapeHtml(item.sourceUrl) + '" target="_blank" title="' + escapeHtml(item.sourceUrl) + '">' + escapeHtml(src) + '</a>' : '<span class="url-text">-</span>'}</td>
                 <td class="time-text">${ct}</td>
             </tr>`;
         }).join('');
@@ -808,7 +978,7 @@
         btn.disabled = true; bt.innerHTML = '收集中...'; sp.classList.remove('d-none');
         fetch('/api/collect', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url}) })
             .then(r => r.json()).then(res => {
-                if (res.code === 200) { showToast(res.message || '收录成功', 'success'); document.getElementById('urlInput').value = ''; loadData(1); }
+                if (res.code === 200) { showToast(res.message || '收录成功', 'success'); document.getElementById('urlInput').value = ''; loadData(1); loadGroups(); }
                 else { showToast(res.message || '收录失败', 'danger'); }
             }).catch(() => showToast('请求失败', 'danger'))
             .finally(() => { btn.disabled = false; bt.innerHTML = '<i class="bi bi-plus-lg"></i> 收集'; sp.classList.add('d-none'); });
@@ -1181,6 +1351,511 @@
             .catch(function() {
                 prog.isRetrying = false;
             });
+    }
+
+    // ===== 合集筛选 =====
+
+    function filterByGroup() {
+        loadData(1);
+    }
+
+    // ===== 合集管理 =====
+
+    function openGroupCreate() {
+        document.getElementById('groupEditId').value = '';
+        document.getElementById('groupEditName').value = '';
+        document.getElementById('groupEditDesc').value = '';
+        document.getElementById('groupEditTitle').innerHTML = '<i class="bi bi-folder me-2"></i>新建合集';
+        var modal = new bootstrap.Modal(document.getElementById('groupEditModal'));
+        // 关闭合集列表弹窗（如果开着）
+        var listModal = bootstrap.Modal.getInstance(document.getElementById('groupListModal'));
+        if (listModal) listModal.hide();
+        modal.show();
+    }
+
+    function openGroupEdit(id, name, desc) {
+        document.getElementById('groupEditId').value = id;
+        document.getElementById('groupEditName').value = name;
+        document.getElementById('groupEditDesc').value = desc || '';
+        document.getElementById('groupEditTitle').innerHTML = '<i class="bi bi-folder me-2"></i>编辑合集';
+        new bootstrap.Modal(document.getElementById('groupEditModal')).show();
+    }
+
+    function saveGroup() {
+        var id = document.getElementById('groupEditId').value;
+        var name = document.getElementById('groupEditName').value.trim();
+        var desc = document.getElementById('groupEditDesc').value.trim();
+        if (!name) { showToast('请输入合集名称', 'warning'); return; }
+        var url = id ? '/api/group/' + id : '/api/group';
+        var method = id ? 'PUT' : 'POST';
+        fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name, description: desc})
+        }).then(r => r.json()).then(res => {
+            if (res.code === 200) {
+                showToast(res.message || '保存成功', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('groupEditModal')).hide();
+                loadGroups();
+                loadData(currentPage);
+                renderGroupList();
+            } else {
+                showToast(res.message || '保存失败', 'danger');
+            }
+        }).catch(() => showToast('请求失败', 'danger'));
+    }
+
+    function openGroupList() {
+        renderGroupList();
+        new bootstrap.Modal(document.getElementById('groupListModal')).show();
+    }
+
+    function renderGroupList() {
+        var content = document.getElementById('groupListContent');
+        content.innerHTML = '<p style="color:#94a3b8;text-align:center;">加载中...</p>';
+        fetch('/api/group/list')
+            .then(r => r.json())
+            .then(res => {
+                if (res.code !== 200 || !res.data) {
+                    content.innerHTML = '<p style="color:#dc2626;text-align:center;">加载失败</p>';
+                    return;
+                }
+                if (res.data.length === 0) {
+                    content.innerHTML = '<p style="color:#94a3b8;text-align:center;">暂无合集，点击下方按钮新建</p>';
+                    return;
+                }
+                content.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;">' +
+                    res.data.map(function(g) {
+                        var delConfirm = 'onclick="deleteGroup(' + g.id + ',\'' + escapeHtml(g.name) + '\',' + g.videoCount + ')"';
+                        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;">' +
+                            '<div><strong style="font-size:14px;">' + escapeHtml(g.name) + '</strong>' +
+                            '<span style="font-size:12px;color:#94a3b8;margin-left:10px;">' + (g.videoCount||0) + ' 个视频</span></div>' +
+                            '<div class="action-group">' +
+                            '<button class="btn-action view" onclick="openGroupEdit(' + g.id + ',\'' + escapeHtml(g.name).replace(/'/g,"\\'") + '\',\'' + escapeHtml(g.description||'').replace(/'/g,"\\'") + '\')"><i class="bi bi-pencil"></i>编辑</button>' +
+                            '<button class="btn-action del" ' + delConfirm + '><i class="bi bi-trash3"></i>删除</button>' +
+                            '</div></div>';
+                    }).join('') + '</div>';
+            })
+            .catch(function() { content.innerHTML = '<p style="color:#dc2626;text-align:center;">加载失败</p>'; });
+    }
+
+    function deleteGroup(id, name, videoCount) {
+        var msg = '确定删除合集 "' + name + '"?';
+        if (videoCount > 0) {
+            msg = '合集 "' + name + '" 内有 ' + videoCount + ' 个视频\n';
+            msg += '☐ 同时删除合集内所有视频？\n（取消则视频保留，仅解除关联）';
+        }
+        // 使用 confirm + 自定义对话框太复杂，用两次 confirm
+        if (!confirm('确定删除合集 "' + name + '"？')) return;
+        var deleteVideos = false;
+        if (videoCount > 0) {
+            deleteVideos = confirm('合集内有 ' + videoCount + ' 个视频，是否同时删除这些视频？\n\n确定=删除视频  取消=仅解除关联');
+        }
+        fetch('/api/group/' + id + '?deleteVideos=' + deleteVideos, {method:'DELETE'})
+            .then(r => r.json()).then(res => {
+                showToast(res.message || '删除成功', res.code === 200 ? 'success' : 'danger');
+                loadGroups();
+                loadData(currentPage);
+                renderGroupList();
+            }).catch(() => showToast('删除失败', 'danger'));
+    }
+
+    // ===== 视频源管理 =====
+
+    function openSourceMgr() {
+        window.location.href = '/sources';
+    }
+
+    // ===== 总搜索 =====
+
+    function openGlobalSearch() {
+        document.getElementById('globalSearchInput').value = '';
+        document.getElementById('globalSearchResults').innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">输入关键词开始搜索</p>';
+        document.getElementById('globalImportBtn').style.display = 'none';
+        document.getElementById('globalSearchSelected').textContent = '';
+        new bootstrap.Modal(document.getElementById('globalSearchModal')).show();
+    }
+
+    var globalSearchData = {};  // sourceId → {source, results}
+    var globalSelected = {};    // key "sourceId:url" → true
+
+    function doGlobalSearch() {
+        var keyword = document.getElementById('globalSearchInput').value.trim();
+        if (!keyword) { showToast('请输入关键词', 'warning'); return; }
+        var results = document.getElementById('globalSearchResults');
+        results.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;"><span class="spinner-border spinner-border-sm me-2"></span>正在搜索所有视频源...</p>';
+        document.getElementById('globalImportBtn').style.display = 'none';
+        document.getElementById('globalSearchSelected').textContent = '';
+        globalSearchData = {};
+        globalSelected = {};
+
+        fetch('/api/episode/search-all', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({keyword: keyword})
+        }).then(r => r.json()).then(res => {
+            if (res.code !== 200 || !res.data) {
+                results.innerHTML = '<p style="color:#dc2626;text-align:center;">搜索失败</p>';
+                return;
+            }
+            var data = res.data;
+            var hasResults = false;
+            var html = '';
+            for (var sid in data) {
+                var sr = data[sid];
+                var source = sr.source;
+                var items = sr.results;
+                if (!items || items.length === 0) continue;
+                hasResults = true;
+                globalSearchData[sid] = sr;
+                html += '<div style="margin-bottom:14px;">' +
+                    '<div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:8px;display:flex;align-items:center;gap:6px;">' +
+                    '<span style="background:#3b82f6;color:#fff;border-radius:4px;padding:2px 8px;font-size:11px;">源</span> ' +
+                    escapeHtml(source.name) + ' <span style="color:#94a3b8;font-weight:400;">(' + items.length + ' 条)</span></div>';
+                items.forEach(function(item, idx) {
+                    var key = sid + ':' + item.url;
+                    html += '<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;cursor:pointer;transition:background 0.15s;" ' +
+                        'onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">' +
+                        '<input type="checkbox" class="global-checkbox" data-key="' + key + '" data-sid="' + sid + '" data-url="' + escapeHtml(item.url) + '" ' +
+                        'data-title="' + escapeHtml(item.title || '') + '" onchange="updateGlobalSelected()">' +
+                        '<span style="font-size:14px;color:#1e293b;">' + escapeHtml(item.title || '未命名') + '</span>' +
+                        '<span style="font-size:12px;color:#94a3b8;margin-left:auto;">' + escapeHtml(item.url.length > 40 ? item.url.substring(0,40)+'...' : item.url) + '</span>' +
+                        '</label>';
+                });
+                html += '</div>';
+            }
+            if (!hasResults) {
+                results.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">未找到相关结果</p>';
+            } else {
+                results.innerHTML = html;
+            }
+        }).catch(function() {
+            results.innerHTML = '<p style="color:#dc2626;text-align:center;">搜索请求失败</p>';
+        });
+    }
+
+    function updateGlobalSelected() {
+        var checked = document.querySelectorAll('.global-checkbox:checked');
+        var btn = document.getElementById('globalImportBtn');
+        var info = document.getElementById('globalSearchSelected');
+        if (checked.length > 0) {
+            btn.style.display = 'inline-flex';
+            info.textContent = '已选 ' + checked.length + ' 个';
+        } else {
+            btn.style.display = 'none';
+            info.textContent = '';
+        }
+    }
+
+    function globalImportSelected() {
+        var checked = document.querySelectorAll('.global-checkbox:checked');
+        if (checked.length === 0) { showToast('请选择要导入的剧集', 'warning'); return; }
+        // 对于每个选中的结果，跳转到导入向导或直接创建合集
+        // 简化：先选择一个，打开批量导入向导
+        var first = checked[0];
+        var sourceId = first.getAttribute('data-sid');
+        var url = first.getAttribute('data-url');
+        var title = first.getAttribute('data-title');
+
+        bootstrap.Modal.getInstance(document.getElementById('globalSearchModal')).hide();
+        // 跳转到批量导入页
+        openBatchImportWithUrl(sourceId, url, title);
+    }
+
+    // ===== 批量导入向导 =====
+
+    var importState = { step: 1, sourceId: null, seriesUrl: '', seriesTitle: '', episodes: [], selectedEpisodes: [], groupId: null };
+
+    function openBatchImport() {
+        importState = { step: 1, sourceId: null, seriesUrl: '', seriesTitle: '', episodes: [], selectedEpisodes: [], groupId: null };
+        renderImportStep1();
+        new bootstrap.Modal(document.getElementById('batchImportModal')).show();
+    }
+
+    function openBatchImportWithUrl(sourceId, url, title) {
+        importState = { step: 1, sourceId: sourceId, seriesUrl: url, seriesTitle: title || '', episodes: [], selectedEpisodes: [], groupId: null };
+        renderImportStep1();
+        var modal = new bootstrap.Modal(document.getElementById('batchImportModal'));
+        modal.show();
+        // 自动跳到步骤2
+        if (sourceId) {
+            setTimeout(function() { doParseEpisodes(); }, 300);
+        }
+    }
+
+    function renderImportStep1() {
+        document.getElementById('importStepTitle').innerHTML = '<i class="bi bi-upload me-2"></i>批量导入 - 选择视频源';
+        // 加载视频源和合集列表
+        Promise.all([
+            fetch('/api/source/list').then(r => r.json()),
+            fetch('/api/group/list').then(r => r.json())
+        ]).then(function(responses) {
+            var sourcesRes = responses[0], groupsRes = responses[1];
+            var sources = sourcesRes.code === 200 ? sourcesRes.data : [];
+            var groups = groupsRes.code === 200 ? groupsRes.data : [];
+            var body = document.getElementById('importStepBody');
+            var html = '<div class="mb-3"><label style="font-size:13px;color:#64748b;margin-bottom:4px;">视频源</label>' +
+                '<select id="importSourceSelect" class="form-control input-glass">' +
+                '<option value="">-- 选择视频源 --</option>';
+            sources.forEach(function(s) {
+                var sel = importState.sourceId == s.id ? 'selected' : '';
+                html += '<option value="' + s.id + '" ' + sel + '>' + escapeHtml(s.name) + '</option>';
+            });
+            html += '</select></div>';
+            html += '<div class="mb-3"><label style="font-size:13px;color:#64748b;margin-bottom:4px;">剧集主页URL</label>' +
+                '<input type="text" id="importUrlInput" class="form-control input-glass" placeholder="如 https://www.czltnl.com/nlu/1038/" value="' + escapeHtml(importState.seriesUrl) + '">' +
+                '</div>';
+            html += '<div class="mb-3"><label style="font-size:13px;color:#64748b;margin-bottom:4px;">目标合集</label>' +
+                '<select id="importGroupSelect" class="form-control input-glass">';
+            if (importState.groupId) {
+                html += '<option value="__new">-- 新建合集 --</option>';
+                groups.forEach(function(g) {
+                    var sel = importState.groupId == g.id ? 'selected' : '';
+                    html += '<option value="' + g.id + '" ' + sel + '>' + escapeHtml(g.name) + ' (' + (g.videoCount||0) + ')</option>';
+                });
+            } else {
+                html += '<option value="__new" selected>-- 新建合集 --</option>';
+                groups.forEach(function(g) {
+                    html += '<option value="' + g.id + '">' + escapeHtml(g.name) + ' (' + (g.videoCount||0) + ')</option>';
+                });
+            }
+            html += '</select></div>';
+            html += '<div class="mb-3" id="importNewGroupNameWrap" style="display:' + (importState.groupId ? 'none' : 'block') + ';">' +
+                '<label style="font-size:13px;color:#64748b;margin-bottom:4px;">新合集名称</label>' +
+                '<input type="text" id="importNewGroupName" class="form-control input-glass" placeholder="如：狂飙" value="' + escapeHtml(importState.seriesTitle) + '">' +
+                '</div>';
+            body.innerHTML = html;
+
+            // 切换合集/新建
+            document.getElementById('importGroupSelect').onchange = function() {
+                document.getElementById('importNewGroupNameWrap').style.display =
+                    this.value === '__new' ? 'block' : 'none';
+            };
+
+            var footer = document.getElementById('importStepFooter');
+            footer.innerHTML = '<button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">取消</button>' +
+                '<button type="button" class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;" onclick="goImportStep2()">下一步 解析集数</button>';
+        });
+    }
+
+    function goImportStep2() {
+        importState.sourceId = document.getElementById('importSourceSelect').value;
+        importState.seriesUrl = document.getElementById('importUrlInput').value.trim();
+        if (!importState.sourceId) { showToast('请选择视频源', 'warning'); return; }
+        if (!importState.seriesUrl) { showToast('请输入剧集主页URL', 'warning'); return; }
+        doParseEpisodes();
+    }
+
+    function doParseEpisodes() {
+        document.getElementById('importStepTitle').innerHTML = '<i class="bi bi-upload me-2"></i>正在解析集数...';
+        var body = document.getElementById('importStepBody');
+        body.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:30px;"><span class="spinner-border spinner-border-sm me-2"></span>正在抓取剧集主页...</p>';
+        document.getElementById('importStepFooter').innerHTML = '';
+
+        var url = '/api/episode/parse';
+        fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({sourceId: importState.sourceId, seriesUrl: importState.seriesUrl})
+        }).then(r => r.json()).then(res => {
+            if (res.code === 200 && res.data) {
+                importState.episodes = res.data;
+                renderImportStep3();
+            } else {
+                body.innerHTML = '<p style="color:#dc2626;text-align:center;">解析失败: ' + escapeHtml(res.message || '未知错误') + '</p>';
+                document.getElementById('importStepFooter').innerHTML = '<button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" onclick="renderImportStep1()">返回上一步</button>';
+            }
+        }).catch(function() {
+            body.innerHTML = '<p style="color:#dc2626;text-align:center;">请求失败</p>';
+            document.getElementById('importStepFooter').innerHTML = '<button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" onclick="renderImportStep1()">返回上一步</button>';
+        });
+    }
+
+    function renderImportStep3() {
+        document.getElementById('importStepTitle').innerHTML = '<i class="bi bi-upload me-2"></i>选择集数（共 ' + importState.episodes.length + ' 集）';
+        var body = document.getElementById('importStepBody');
+        var html = '';
+        // 快速选择工具条
+        html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">' +
+            '<label style="font-size:13px;color:#64748b;">从</label>' +
+            '<input type="number" id="importRangeFrom" class="search-input" style="width:70px;padding:4px 8px;" value="1">' +
+            '<label style="font-size:13px;color:#64748b;">到</label>' +
+            '<input type="number" id="importRangeTo" class="search-input" style="width:70px;padding:4px 8px;" value="' + importState.episodes.length + '">' +
+            '<button class="btn-action" onclick="selectImportRange()"><i class="bi bi-check-square"></i>选中范围</button>' +
+            '<button class="btn-action" onclick="selectAllImport()"><i class="bi bi-check-all"></i>全选</button>' +
+            '<button class="btn-action del" onclick="clearImportSelection()"><i class="bi bi-x"></i>清除</button>' +
+            '</div>';
+        // 集数列表（虚拟滚动，先显示前200个）
+        var displayEps = importState.episodes.slice(0, 500);
+        if (importState.episodes.length > 500) {
+            html += '<p style="font-size:12px;color:#ca8a04;">仅显示前 500 集，使用范围选择来批量操作</p>';
+        }
+        html += '<div style="max-height:40vh;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px;">';
+        displayEps.forEach(function(ep) {
+            var epNum = ep.episodeNumber;
+            var checked = importState.selectedEpisodes.indexOf(epNum) >= 0 ? 'checked' : '';
+            html += '<label style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid #f1f5f9;cursor:pointer;font-size:13px;">' +
+                '<input type="checkbox" class="import-ep-cb" value="' + epNum + '" ' + checked + '>' +
+                '<span>' + (ep.text || '第' + epNum + '集') + '</span>' +
+                '<span style="color:#94a3b8;font-size:11px;margin-left:auto;overflow:hidden;text-overflow:ellipsis;max-width:200px;white-space:nowrap;">' + escapeHtml(ep.url || '') + '</span>' +
+                '</label>';
+        });
+        html += '</div>';
+        body.innerHTML = html;
+
+        var footer = document.getElementById('importStepFooter');
+        footer.innerHTML = '<button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" onclick="renderImportStep1()">返回上一步</button>' +
+            '<button type="button" class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;" onclick="doBatchImport()">导入选中集数</button>';
+    }
+
+    function selectImportRange() {
+        var from = parseInt(document.getElementById('importRangeFrom').value) || 1;
+        var to = parseInt(document.getElementById('importRangeTo').value) || importState.episodes.length;
+        var cbs = document.querySelectorAll('.import-ep-cb');
+        cbs.forEach(function(cb) {
+            var v = parseInt(cb.value);
+            cb.checked = v >= from && v <= to;
+        });
+        updateImportSelection();
+    }
+
+    function selectAllImport() {
+        document.querySelectorAll('.import-ep-cb').forEach(function(cb) { cb.checked = true; });
+        updateImportSelection();
+    }
+
+    function clearImportSelection() {
+        document.querySelectorAll('.import-ep-cb').forEach(function(cb) { cb.checked = false; });
+        updateImportSelection();
+    }
+
+    function updateImportSelection() {
+        importState.selectedEpisodes = [];
+        document.querySelectorAll('.import-ep-cb:checked').forEach(function(cb) {
+            importState.selectedEpisodes.push(parseInt(cb.value));
+        });
+    }
+
+    function doBatchImport() {
+        updateImportSelection();
+        if (importState.selectedEpisodes.length === 0) {
+            showToast('请至少选择一集', 'warning');
+            return;
+        }
+
+        // 确定目标合集
+        var groupSelect = document.getElementById('importGroupSelect');
+        var groupId;
+        if (groupSelect && groupSelect.value !== '__new') {
+            groupId = parseInt(groupSelect.value);
+        }
+        // 如果没有打开步骤1的选择器，用 importState.groupId
+        if (!groupId && importState.groupId) {
+            groupId = importState.groupId;
+        }
+
+        if (!groupId) {
+            // 需要新建合集
+            var newName = document.getElementById('importNewGroupName').value.trim();
+            if (!newName) { showToast('请输入新合集名称', 'warning'); return; }
+            // 先创建合集
+            fetch('/api/group', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: newName})
+            }).then(r => r.json()).then(function(res) {
+                if (res.code === 200 && res.data) {
+                    doImportWithGroup(res.data.id);
+                } else {
+                    showToast(res.message || '合集创建失败', 'danger');
+                }
+            }).catch(function() { showToast('请求失败', 'danger'); });
+        } else {
+            doImportWithGroup(groupId);
+        }
+    }
+
+    function doImportWithGroup(groupId) {
+        var episodes = [];
+        importState.selectedEpisodes.forEach(function(epNum) {
+            var found = importState.episodes.find(function(e) { return e.episodeNumber === epNum; });
+            if (found) {
+                episodes.push({episodeNumber: epNum, url: found.url});
+            }
+        });
+
+        if (episodes.length === 0) {
+            showToast('没有可导入的集数', 'warning');
+            return;
+        }
+
+        var body = document.getElementById('importStepBody');
+        body.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:30px;"><span class="spinner-border spinner-border-sm me-2"></span>正在导入 ' + episodes.length + ' 集...</p>';
+        document.getElementById('importStepFooter').innerHTML = '';
+        document.getElementById('importStepTitle').innerHTML = '<i class="bi bi-upload me-2"></i>正在导入...';
+
+        fetch('/api/episode/import', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({groupId: groupId, episodes: episodes})
+        }).then(r => r.json()).then(function(res) {
+            if (res.code === 200 && res.data) {
+                var d = res.data;
+                body.innerHTML = '<div style="text-align:center;padding:20px;">' +
+                    '<i class="bi bi-check-circle" style="font-size:48px;color:#16a34a;display:block;margin-bottom:12px;"></i>' +
+                    '<p style="font-size:16px;font-weight:600;color:#1e293b;">导入完成</p>' +
+                    '<p style="font-size:14px;color:#64748b;">成功: ' + d.successCount + ' | 跳过: ' + d.skippedCount + ' | 失败: ' + d.failCount + '</p>' +
+                    '</div>';
+                document.getElementById('importStepFooter').innerHTML =
+                    '<button type="button" class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;" data-bs-dismiss="modal" onclick="loadData(1);loadGroups();">完成</button>';
+                loadGroups();
+            } else {
+                body.innerHTML = '<p style="color:#dc2626;text-align:center;">导入失败: ' + escapeHtml(res.message || '未知错误') + '</p>';
+                document.getElementById('importStepFooter').innerHTML =
+                    '<button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">关闭</button>';
+            }
+        }).catch(function() {
+            body.innerHTML = '<p style="color:#dc2626;text-align:center;">请求失败</p>';
+            document.getElementById('importStepFooter').innerHTML =
+                '<button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">关闭</button>';
+        });
+    }
+
+    // ===== 下一集检测 =====
+
+    function checkNextEpisode(videoId) {
+        var btn = document.getElementById('next-btn-' + videoId);
+        var cell = document.getElementById('next-cell-' + videoId);
+        if (btn) { btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></span>'; btn.disabled = true; }
+
+        fetch('/api/episode/next/' + videoId)
+            .then(r => r.json())
+            .then(function(res) {
+                if (res.code === 200 && res.data) {
+                    var d = res.data;
+                    if (d.nextEpisodeNumber) {
+                        if (d.message === '已收录') {
+                            cell.innerHTML = '<span style="color:#16a34a;font-size:11px;" title="第' + d.nextEpisodeNumber + '集已收录">✔' + d.nextEpisodeNumber + '</span>';
+                        } else if (d.nextUrl) {
+                            cell.innerHTML = '<span style="color:#ca8a04;font-size:11px;cursor:pointer;" onclick="quickImportNext(' + videoId + ')" title="第' + d.nextEpisodeNumber + '集可导入">⏳' + d.nextEpisodeNumber + '</span>';
+                        } else {
+                            cell.innerHTML = '<span style="color:#94a3b8;font-size:11px;">-</span>';
+                        }
+                    } else {
+                        cell.innerHTML = '<span style="color:#dc2626;font-size:11px;">✘</span>';
+                    }
+                } else {
+                    if (btn) { btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i>'; btn.disabled = false; }
+                }
+            })
+            .catch(function() {
+                if (btn) { btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i>'; btn.disabled = false; }
+            });
+    }
+
+    function quickImportNext(videoId) {
+        // 跳转到详情页或执行快速导入
+        window.location.href = '/detail/' + videoId;
     }
 </script>
 </body>

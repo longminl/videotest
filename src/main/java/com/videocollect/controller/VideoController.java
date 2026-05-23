@@ -35,6 +35,14 @@ public class VideoController {
     }
 
     /**
+     * 视频源管理页
+     */
+    @GetMapping("/sources")
+    public String sources() {
+        return "sources";
+    }
+
+    /**
      * 详情页
      */
     @GetMapping("/detail/{id}")
@@ -60,14 +68,15 @@ public class VideoController {
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false) String sortOrder) {
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(required = false) Long groupId) {
 
         int offset = (page - 1) * pageSize;
-        java.util.List<VideoRecord> list = videoRecordDao.findPage(offset, pageSize, status, keyword, sortBy, sortOrder);
+        java.util.List<VideoRecord> list = videoRecordDao.findPage(offset, pageSize, status, keyword, sortBy, sortOrder, groupId);
         for (VideoRecord r : list) {
             r.setCacheSize(hlsCacheService.getCacheSizeText(r.getTitle()));
         }
-        long total = videoRecordDao.count(status, keyword);
+        long total = videoRecordDao.count(status, keyword, groupId);
         PageResult<VideoRecord> pageResult = new PageResult<>(list, total, page, pageSize);
         return ApiResult.success(pageResult);
     }

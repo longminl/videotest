@@ -30,11 +30,13 @@ public interface VideoRecordDao {
                                @Param("status") Integer status,
                                @Param("keyword") String keyword,
                                @Param("sortBy") String sortBy,
-                               @Param("sortOrder") String sortOrder);
+                               @Param("sortOrder") String sortOrder,
+                               @Param("groupId") Long groupId);
 
     /** 查询总数 */
     long count(@Param("status") Integer status,
-               @Param("keyword") String keyword);
+               @Param("keyword") String keyword,
+               @Param("groupId") Long groupId);
 
     /** 更新状态和延迟 */
     int updateStatus(@Param("id") Long id,
@@ -66,4 +68,29 @@ public interface VideoRecordDao {
 
     /** 查询所有需要检测的记录（status=0或2） */
     List<VideoRecord> findNeedCheck();
+
+    // ====== 合集/集数相关 ======
+
+    /** 根据合集ID查询所有视频 */
+    List<VideoRecord> findByGroupId(@Param("groupId") Long groupId,
+                                    @Param("sortBy") String sortBy,
+                                    @Param("sortOrder") String sortOrder);
+
+    /** 更新视频所属合集 */
+    int updateGroup(@Param("id") Long id,
+                    @Param("groupId") Long groupId);
+
+    /** 更新视频集数 */
+    int updateEpisodeNumber(@Param("id") Long id,
+                            @Param("episodeNumber") Integer episodeNumber);
+
+    /** 查询某合集下最大的集数 */
+    Integer findMaxEpisodeNumber(@Param("groupId") Long groupId);
+
+    /** 统计某合集下视频数量 */
+    int countByGroupId(@Param("groupId") Long groupId);
+
+    /** 查询合集下是否已有某集数 */
+    VideoRecord findByGroupAndEpisode(@Param("groupId") Long groupId,
+                                      @Param("episodeNumber") Integer episodeNumber);
 }

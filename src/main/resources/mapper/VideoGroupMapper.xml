@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.videocollect.dao.VideoGroupDao">
+
+    <resultMap id="baseMap" type="VideoGroup">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="source_id" property="sourceId"/>
+        <result column="source_series_url" property="sourceSeriesUrl"/>
+        <result column="total_episodes" property="totalEpisodes"/>
+        <result column="description" property="description"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <resultMap id="withCountMap" type="VideoGroup" extends="baseMap">
+        <result column="video_count" property="videoCount"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, name, source_id, source_series_url, total_episodes,
+        description, sort_order, created_at, updated_at
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO video_group (name, source_id, source_series_url, total_episodes, description, sort_order)
+        VALUES (#{name}, #{sourceId}, #{sourceSeriesUrl}, #{totalEpisodes}, #{description}, #{sortOrder})
+    </insert>
+
+    <select id="findById" resultMap="baseMap">
+        SELECT <include refid="baseColumns"/> FROM video_group WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="withCountMap">
+        SELECT g.*,
+               (SELECT COUNT(*) FROM video_collection v WHERE v.group_id = g.id) AS video_count
+        FROM video_group g
+        ORDER BY g.sort_order ASC, g.id ASC
+    </select>
+
+    <update id="update">
+        UPDATE video_group
+        SET name = #{name}, source_id = #{sourceId},
+            source_series_url = #{sourceSeriesUrl},
+            total_episodes = #{totalEpisodes},
+            description = #{description},
+            sort_order = #{sortOrder},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM video_group WHERE id = #{id}
+    </delete>
+
+    <select id="countVideos" resultType="int">
+        SELECT COUNT(*) FROM video_collection WHERE group_id = #{groupId}
+    </select>
+
+</mapper>

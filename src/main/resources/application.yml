@@ -30,6 +30,25 @@ video:
     path: yt-dlp
     timeout: 30
 
+  # 预设视频源模板（启动时自动加载到 video_source 表）
+  source-templates:
+    - name: "czltnl"
+      homeUrl: "https://www.czltnl.com"
+      searchUrl: "/api/search?wd={keyword}"
+      searchDataPath: "$"
+      titleField: "title"
+      urlField: "url"
+      episodePattern: "(\\d+)-(\\d+)\\.html"
+      episodeGroup: 2
+    - name: "动漫岛"
+      homeUrl: "https://www.dmdao.com"
+      searchUrl: "/search?key={keyword}"
+      searchDataPath: "$.data.list"
+      titleField: "name"
+      urlField: "link"
+      episodePattern: "(\\d+)-(\\d+)\\.html"
+      episodeGroup: 2
+
   # HLS 代理缓存配置
   hls:
     cache-dir: ${user.dir}/hls-cache
