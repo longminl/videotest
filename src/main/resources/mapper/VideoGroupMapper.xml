@@ -48,7 +48,7 @@
             total_episodes = #{totalEpisodes},
             description = #{description},
             sort_order = #{sortOrder},
-            updated_at = NOW()
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
     </update>
 

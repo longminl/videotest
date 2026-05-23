@@ -58,7 +58,7 @@
             episode_selector = #{episodeSelector},
             encoding = #{encoding},
             sort_order = #{sortOrder},
-            updated_at = NOW()
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
     </update>
 
