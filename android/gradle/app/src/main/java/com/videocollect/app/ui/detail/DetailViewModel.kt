@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.videocollect.app.api.RetrofitClient
 import com.videocollect.app.api.CacheStatusResponse
+import com.videocollect.app.api.models.VideoGroup
 import com.videocollect.app.api.models.VideoRecord
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -20,7 +21,18 @@ data class DetailUiState(
     val cacheStatus: CacheStatusResponse? = null,
     val isPollingCache: Boolean = false,
     val cacheError: String? = null,
-    val isDeleting: Boolean = false
+    val isDeleting: Boolean = false,
+    // group
+    val groups: List<VideoGroup> = emptyList(),
+    val groupsLoading: Boolean = false,
+    val showMoveGroupDialog: Boolean = false,
+    val moveGroupMessage: String? = null,
+    // next episode
+    val nextEpisodeChecking: Boolean = false,
+    val nextEpisodeMessage: String? = null,
+    val nextEpisodeAvailable: Boolean = false,
+    val nextEpisodeNumber: Int? = null,
+    val nextEpisodeUrl: String? = null
 )
 
 class DetailViewModel : ViewModel() {
@@ -135,6 +147,107 @@ class DetailViewModel : ViewModel() {
                 onDeleted()
             } catch (_: Exception) {
                 _uiState.update { it.copy(isDeleting = false) }
+            }
+        }
+    }
+
+    // ===== Group =====
+
+    fun loadGroups() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(groupsLoading = true) }
+            try {
+                val result = RetrofitClient.getApiService().getGroupList()
+                if (result.isSuccess) {
+                    _uiState.update { it.copy(groups = result.data ?: emptyList(), groupsLoading = false) }
+                } else {
+                    _uiState.update { it.copy(groupsLoading = false) }
+                }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(groupsLoading = false) }
+            }
+        }
+    }
+
+    fun showMoveGroupDialog() {
+        loadGroups()
+        _uiState.update { it.copy(showMoveGroupDialog = true, moveGroupMessage = null) }
+    }
+
+    fun dismissMoveGroupDialog() {
+        _uiState.update { it.copy(showMoveGroupDialog = false) }
+    }
+
+    fun moveToGroup(groupId: Long) {
+        val videoId = _uiState.value.record?.id ?: return
+        viewModelScope.launch {
+            try {
+                val body = mapOf("videoId" to videoId, "groupId" to groupId)
+                val result = RetrofitClient.getApiService().moveVideoToGroup(body)
+                _uiState.update { it.copy(showMoveGroupDialog = false) }
+                // Reload to reflect group change
+                load(videoId)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(moveGroupMessage = e.message ?: "移动失败") }
+            }
+        }
+    }
+
+    fun unlinkFromGroup() {
+        val videoId = _uiState.value.record?.id ?: return
+        viewModelScope.launch {
+            try {
+                RetrofitClient.getApiService().unlinkVideoFromGroup(videoId)
+                load(videoId)
+            } catch (_: Exception) {}
+        }
+    }
+
+    // ===== Next Episode =====
+
+    fun checkNextEpisode() {
+        val videoId = _uiState.value.record?.id ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(nextEpisodeChecking = true, nextEpisodeMessage = null) }
+            try {
+                val result = RetrofitClient.getApiService().checkNextEpisode(videoId)
+                if (result.isSuccess && result.data != null) {
+                    _uiState.update {
+                        it.copy(
+                            nextEpisodeChecking = false,
+                            nextEpisodeMessage = result.data.message,
+                            nextEpisodeAvailable = result.data.available == true,
+                            nextEpisodeNumber = result.data.nextEpisodeNumber,
+                            nextEpisodeUrl = result.data.nextUrl
+                        )
+                    }
+                } else {
+                    _uiState.update { it.copy(nextEpisodeChecking = false, nextEpisodeMessage = result.message) }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(nextEpisodeChecking = false, nextEpisodeMessage = e.message ?: "检测失败") }
+            }
+        }
+    }
+
+    fun importNextEpisode(onDone: (Long?) -> Unit) {
+        val nextUrl = _uiState.value.nextEpisodeUrl ?: return
+        val record = _uiState.value.record ?: return
+        if (nextUrl.isBlank()) return
+        viewModelScope.launch {
+            try {
+                val title = (record.title ?: "") + " 第" + (_uiState.value.nextEpisodeNumber ?: "") + "集"
+                val body = com.videocollect.app.api.models.CollectRequest(url = nextUrl)
+                val result = RetrofitClient.getApiService().collectVideo(body)
+                if (result.isSuccess && result.data != null) {
+                    _uiState.update { it.copy(nextEpisodeMessage = "已导入下一集") }
+                    onDone(result.data.id)
+                    load(record.id ?: 0)
+                } else {
+                    _uiState.update { it.copy(nextEpisodeMessage = result.message ?: "导入失败") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(nextEpisodeMessage = e.message ?: "导入失败") }
             }
         }
     }

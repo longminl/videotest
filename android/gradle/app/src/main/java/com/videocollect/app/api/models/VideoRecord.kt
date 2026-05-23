@@ -9,6 +9,9 @@ data class VideoRecord(
     val latencyMs: Int?,
     val pageTitle: String?,
     val remark: String?,
+    val groupId: Long?,
+    val groupName: String?,
+    val episodeNumber: Int?,
     val isCached: Boolean?,
     val cacheSize: String?,
     val createdAt: String?,
@@ -29,4 +32,10 @@ data class VideoRecord(
 
     val latencyText: String
         get() = if (latencyMs != null) "${latencyMs}ms" else "-"
+
+    val episodeText: String
+        get() = if (episodeNumber != null) "第${episodeNumber}集" else "-"
+
+    val groupDisplay: String
+        get() = groupName ?: (if (groupId != null) "合集#$groupId" else "未分组")
 }

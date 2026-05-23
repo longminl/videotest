@@ -20,8 +20,10 @@ import com.videocollect.app.ui.detail.DetailScreen
 import com.videocollect.app.ui.list.ListScreen
 import com.videocollect.app.ui.list.ListViewModel
 import com.videocollect.app.ui.player.PlayerActivity
+import com.videocollect.app.ui.search.GlobalSearchScreen
 import com.videocollect.app.ui.server.ServerConfigScreen
 import com.videocollect.app.ui.settings.SettingsScreen
+import com.videocollect.app.ui.source.SourceScreen
 import com.videocollect.app.ui.theme.VideoCollectTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -77,7 +79,25 @@ fun AppNavigation(isConfigured: Boolean) {
                 viewModel = listViewModel,
                 onAddClick = { navController.navigate("add") },
                 onDetailClick = { id -> navController.navigate("detail/$id") },
-                onSettingsClick = { navController.navigate("settings") }
+                onSettingsClick = { navController.navigate("settings") },
+                onSourcesClick = { navController.navigate("sources") },
+                onSearchClick = { navController.navigate("search") }
+            )
+        }
+
+        composable("sources") {
+            SourceScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("search") {
+            GlobalSearchScreen(
+                onBack = { navController.popBackStack() },
+                onImportDone = {
+                    listViewModel.refresh()
+                    navController.popBackStack()
+                }
             )
         }
 

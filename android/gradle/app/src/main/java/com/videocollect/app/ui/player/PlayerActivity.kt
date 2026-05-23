@@ -99,8 +99,10 @@ class PlayerActivity : ComponentActivity() {
         val singleItem = VideoRecord(
             id = -1, title = title, videoUrl = videoUrl,
             sourceUrl = null, status = 1, latencyMs = null,
-            pageTitle = null, remark = null, isCached = null,
-            cacheSize = null, createdAt = null, updatedAt = null
+            pageTitle = null, remark = null,
+            groupId = null, groupName = null, episodeNumber = null,
+            isCached = null, cacheSize = null,
+            createdAt = null, updatedAt = null
         )
 
         val items = if (itemsJson.isNotBlank()) {

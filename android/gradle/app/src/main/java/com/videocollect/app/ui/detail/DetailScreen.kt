@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.videocollect.app.api.models.VideoGroup
 import com.videocollect.app.api.models.VideoRecord
 import com.videocollect.app.api.CacheStatusResponse
 import com.videocollect.app.ui.theme.*
@@ -107,8 +108,22 @@ fun DetailScreen(
                         isRechecking = uiState.isRechecking,
                         onPlay = { onPlay(record) },
                         onRecheck = { viewModel.recheck() },
-                        onCache = { viewModel.startCache() }
+                        onCache = { viewModel.startCache() },
+                        onMoveGroup = { viewModel.showMoveGroupDialog() },
+                        onCheckNext = { viewModel.checkNextEpisode() },
+                        nextEpisodeChecking = uiState.nextEpisodeChecking,
+                        nextEpisodeAvailable = uiState.nextEpisodeAvailable,
+                        nextEpisodeMessage = uiState.nextEpisodeMessage
                     )
+
+                    // Next episode result card
+                    if (uiState.nextEpisodeMessage != null && uiState.nextEpisodeUrl != null) {
+                        NextEpisodeCard(
+                            message = uiState.nextEpisodeMessage ?: "",
+                            available = uiState.nextEpisodeAvailable,
+                            onImport = { viewModel.importNextEpisode { } }
+                        )
+                    }
 
                     // Cache progress
                     if (record.isM3u8) {
@@ -134,6 +149,18 @@ fun DetailScreen(
             }
         }
     }
+
+    // Move to group dialog
+    if (uiState.showMoveGroupDialog) {
+        MoveToGroupDialog(
+            groups = uiState.groups,
+            loading = uiState.groupsLoading,
+            currentGroupId = record?.groupId,
+            onSelectGroup = { groupId -> viewModel.moveToGroup(groupId) },
+            onUnlink = { viewModel.unlinkFromGroup() },
+            onDismiss = { viewModel.dismissMoveGroupDialog() }
+        )
+    }
 }
 
 @Composable
@@ -153,6 +180,38 @@ private fun VideoInfoCard(record: VideoRecord) {
                 color = TextPrimary
             )
             Spacer(modifier = Modifier.height(12.dp))
+
+            // Group + Episode info
+            if (record.groupId != null || record.episodeNumber != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (record.groupId != null) {
+                        Icon(Icons.Default.Folder, contentDescription = null,
+                            modifier = Modifier.size(16.dp), tint = Blue400)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = record.groupDisplay,
+                            fontSize = 13.sp,
+                            color = Blue600,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    if (record.episodeNumber != null) {
+                        if (record.groupId != null) {
+                            Spacer(modifier = Modifier.width(12.dp))
+                        }
+                        Icon(Icons.Default.Tag, contentDescription = null,
+                            modifier = Modifier.size(16.dp), tint = TextTertiary)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = record.episodeText,
+                            fontSize = 13.sp,
+                            color = TextSecondary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
             // Status row
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -200,48 +259,95 @@ private fun ActionButtons(
     isRechecking: Boolean,
     onPlay: () -> Unit,
     onRecheck: () -> Unit,
-    onCache: () -> Unit
+    onCache: () -> Unit,
+    onMoveGroup: () -> Unit,
+    onCheckNext: () -> Unit,
+    nextEpisodeChecking: Boolean = false,
+    nextEpisodeAvailable: Boolean = false,
+    nextEpisodeMessage: String? = null
 ) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        if (record.isPlayable) {
-            Button(
-                onClick = onPlay,
-                modifier = Modifier.weight(1f).height(48.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Blue600)
-            ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(22.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("播放", fontWeight = FontWeight.SemiBold)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Row 1: Play / Cache / Recheck
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (record.isPlayable) {
+                Button(
+                    onClick = onPlay,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Blue600)
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(22.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("播放", fontWeight = FontWeight.SemiBold)
+                }
             }
-        }
-        if (record.isM3u8 && record.isPlayable) {
+            if (record.isM3u8 && record.isPlayable) {
+                OutlinedButton(
+                    onClick = onCache,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Blue600),
+                    border = BorderStroke(1.dp, Blue600)
+                ) {
+                    Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("缓存", fontWeight = FontWeight.SemiBold)
+                }
+            }
             OutlinedButton(
-                onClick = onCache,
-                modifier = Modifier.weight(1f).height(48.dp),
+                onClick = onRecheck,
+                enabled = !isRechecking,
+                modifier = Modifier.height(48.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Blue600),
-                border = BorderStroke(1.dp, Blue600)
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
+                border = BorderStroke(1.dp, TextTertiary)
             ) {
-                Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("缓存", fontWeight = FontWeight.SemiBold)
+                if (isRechecking) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = TextSecondary)
+                } else {
+                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("重检", fontSize = 13.sp)
+                }
             }
         }
-        OutlinedButton(
-            onClick = onRecheck,
-            enabled = !isRechecking,
-            modifier = Modifier.height(48.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
-            border = BorderStroke(1.dp, TextTertiary)
-        ) {
-            if (isRechecking) {
-                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = TextSecondary)
-            } else {
-                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+
+        // Row 2: Group + Next episode
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedButton(
+                onClick = onMoveGroup,
+                modifier = Modifier.weight(1f).height(44.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Blue600),
+                border = BorderStroke(1.dp, Blue600.copy(alpha = 0.5f))
+            ) {
+                Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("重检", fontSize = 13.sp)
+                Text(
+                    if (record.groupId != null) "合集" else "加入合集",
+                    fontSize = 13.sp
+                )
+            }
+            OutlinedButton(
+                onClick = onCheckNext,
+                enabled = !nextEpisodeChecking && record.groupId != null,
+                modifier = Modifier.weight(1f).height(44.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = if (record.groupId != null) Blue600 else TextTertiary
+                ),
+                border = BorderStroke(1.dp, if (record.groupId != null) Blue600.copy(alpha = 0.5f) else TextTertiary.copy(alpha = 0.3f))
+            ) {
+                if (nextEpisodeChecking) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Blue600)
+                } else {
+                    Icon(Icons.Default.SkipNext, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        if (record.groupId != null) "下集" else "无合集",
+                        fontSize = 13.sp
+                    )
+                }
             }
         }
     }
@@ -421,4 +527,126 @@ private fun InfoRow(label: String, value: String) {
         Text(label, color = TextTertiary, fontSize = 12.sp)
         Text(value, color = TextSecondary, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
+}
+
+// ====== 下集检测卡片 ======
+
+@Composable
+private fun NextEpisodeCard(
+    message: String,
+    available: Boolean,
+    onImport: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.SkipNext,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = if (available) StatusGreen else TextTertiary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("下集检测", fontWeight = FontWeight.SemiBold, color = TextPrimary, fontSize = 15.sp)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(message, color = if (available) StatusGreen else TextSecondary, fontSize = 13.sp)
+            if (available) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = onImport,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Blue600),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("导入下一集", fontSize = 13.sp)
+                }
+            }
+        }
+    }
+}
+
+// ====== 移动到合集弹窗 ======
+
+@Composable
+private fun MoveToGroupDialog(
+    groups: List<VideoGroup>,
+    loading: Boolean,
+    currentGroupId: Long?,
+    onSelectGroup: (Long) -> Unit,
+    onUnlink: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("移动到合集") },
+        text = {
+            if (loading) {
+                Box(modifier = Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Blue600)
+                }
+            } else if (groups.isEmpty()) {
+                Text("暂无合集，请先在首页创建")
+            } else {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    groups.forEach { group ->
+                        val isCurrent = group.id != null && group.id == currentGroupId
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { if (!isCurrent) onSelectGroup(group.id ?: return@clickable) }
+                                .padding(vertical = 10.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (isCurrent) Icons.Default.CheckCircle else Icons.Default.Folder,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = if (isCurrent) StatusGreen else Blue600
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    group.name ?: "未命名",
+                                    fontSize = 15.sp,
+                                    color = TextPrimary,
+                                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
+                                )
+                                if (group.videoCount != null) {
+                                    Text(
+                                        "${group.videoCount} 个视频",
+                                        fontSize = 12.sp,
+                                        color = TextTertiary
+                                    )
+                                }
+                            }
+                            if (isCurrent) {
+                                Text("当前", fontSize = 12.sp, color = StatusGreen)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (currentGroupId != null) {
+                TextButton(
+                    onClick = onUnlink,
+                    colors = ButtonDefaults.textButtonColors(contentColor = StatusRed)
+                ) {
+                    Text("从合集移除")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        }
+    )
 }

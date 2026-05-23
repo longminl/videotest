@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.videocollect.app.api.RetrofitClient
 import com.videocollect.app.api.DeleteBatchRequest
+import com.videocollect.app.api.models.VideoGroup
 import com.videocollect.app.api.models.VideoRecord
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -16,12 +17,19 @@ data class ListUiState(
     val currentPage: Int = 1,
     val hasMore: Boolean = true,
     val statusFilter: Int? = null,
+    val groupIdFilter: Long? = null,
     val keyword: String = "",
     val selectedIds: Set<Long> = emptySet(),
     val isSelectMode: Boolean = false,
     val error: String? = null,
     val sortBy: String = "title",
-    val sortOrder: String = "asc"
+    val sortOrder: String = "asc",
+    // group
+    val groups: List<VideoGroup> = emptyList(),
+    val groupsLoading: Boolean = false,
+    // batch move
+    val showMoveGroupDialog: Boolean = false,
+    val moveGroupMessage: String? = null
 )
 
 class ListViewModel : ViewModel() {
@@ -32,7 +40,24 @@ class ListViewModel : ViewModel() {
     private val pageSize = 20
 
     init {
+        loadGroups()
         loadData()
+    }
+
+    fun loadGroups() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(groupsLoading = true) }
+            try {
+                val result = RetrofitClient.getApiService().getGroupList()
+                if (result.isSuccess) {
+                    _uiState.update { it.copy(groups = result.data ?: emptyList(), groupsLoading = false) }
+                } else {
+                    _uiState.update { it.copy(groupsLoading = false) }
+                }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(groupsLoading = false) }
+            }
+        }
     }
 
     fun loadData() {
@@ -47,7 +72,8 @@ class ListViewModel : ViewModel() {
                     status = _uiState.value.statusFilter,
                     keyword = _uiState.value.keyword.ifBlank { null },
                     sortBy = sortBy,
-                    sortOrder = sortOrder
+                    sortOrder = sortOrder,
+                    groupId = _uiState.value.groupIdFilter
                 )
                 if (result.isSuccess && result.data != null) {
                     val items = result.data.list
@@ -89,7 +115,8 @@ class ListViewModel : ViewModel() {
                     status = state.statusFilter,
                     keyword = state.keyword.ifBlank { null },
                     sortBy = sortBy,
-                    sortOrder = sortOrder
+                    sortOrder = sortOrder,
+                    groupId = state.groupIdFilter
                 )
                 if (result.isSuccess && result.data != null) {
                     val newItems = state.items + result.data.list
@@ -112,6 +139,11 @@ class ListViewModel : ViewModel() {
 
     fun setStatusFilter(status: Int?) {
         _uiState.update { it.copy(statusFilter = status) }
+        loadData()
+    }
+
+    fun setGroupFilter(groupId: Long?) {
+        _uiState.update { it.copy(groupIdFilter = groupId) }
         loadData()
     }
 
@@ -159,6 +191,36 @@ class ListViewModel : ViewModel() {
                 onDone()
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message ?: "删除失败") }
+            }
+        }
+    }
+
+    fun showMoveGroupDialog() {
+        _uiState.update { it.copy(showMoveGroupDialog = true, moveGroupMessage = null) }
+    }
+
+    fun dismissMoveGroupDialog() {
+        _uiState.update { it.copy(showMoveGroupDialog = false, moveGroupMessage = null) }
+    }
+
+    fun batchMoveToGroup(groupId: Long) {
+        val ids = _uiState.value.selectedIds.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                val body = mapOf<String, Any>("videoIds" to ids, "groupId" to groupId)
+                val result = RetrofitClient.getApiService().batchMoveToGroup(body)
+                _uiState.update {
+                    it.copy(
+                        showMoveGroupDialog = false,
+                        isSelectMode = false,
+                        selectedIds = emptySet(),
+                        moveGroupMessage = result.message
+                    )
+                }
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(moveGroupMessage = e.message ?: "移动失败") }
             }
         }
     }

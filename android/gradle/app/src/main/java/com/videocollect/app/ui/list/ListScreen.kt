@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.videocollect.app.api.models.VideoGroup
 import com.videocollect.app.api.models.VideoRecord
 import com.videocollect.app.ui.theme.*
 import kotlinx.coroutines.launch
@@ -39,7 +40,9 @@ fun ListScreen(
     viewModel: ListViewModel,
     onAddClick: () -> Unit,
     onDetailClick: (Long) -> Unit,
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    onSourcesClick: () -> Unit = {},
+    onSearchClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
@@ -82,6 +85,11 @@ fun ListScreen(
                                 fontSize = 14.sp
                             )
                         }
+                        if (uiState.selectedIds.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.showMoveGroupDialog() }) {
+                                Icon(Icons.Default.Folder, contentDescription = "移动到合集", tint = Blue600)
+                            }
+                        }
                         IconButton(onClick = { viewModel.deleteSelected { } }) {
                             Icon(Icons.Default.Delete, contentDescription = "删除", tint = StatusRed)
                         }
@@ -102,6 +110,12 @@ fun ListScreen(
                         )
                     },
                     actions = {
+                        IconButton(onClick = onSourcesClick) {
+                            Icon(Icons.Default.Extension, contentDescription = "视频源")
+                        }
+                        IconButton(onClick = onSearchClick) {
+                            Icon(Icons.Default.Search, contentDescription = "总搜索")
+                        }
                         IconButton(onClick = onSettingsClick) {
                             Icon(Icons.Default.Settings, contentDescription = "设置")
                         }
@@ -168,6 +182,42 @@ fun ListScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 10.dp)
                 )
+            }
+
+            // Group filter chips
+            if (!uiState.isSelectMode && uiState.groups.isNotEmpty()) {
+                val groupList = uiState.groups
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    FilterChip(
+                        selected = uiState.groupIdFilter == null,
+                        onClick = { viewModel.setGroupFilter(null) },
+                        label = { Text("全部视频", fontSize = 12.sp) },
+                        colors = chipColors(uiState.groupIdFilter == null),
+                        border = null
+                    )
+                    groupList.forEach { group ->
+                        FilterChip(
+                            selected = uiState.groupIdFilter == group.id,
+                            onClick = { viewModel.setGroupFilter(group.id) },
+                            label = {
+                                Text(
+                                    (group.name ?: "未知") + if (group.videoCount != null) " (${group.videoCount})" else "",
+                                    fontSize = 12.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            colors = chipColors(uiState.groupIdFilter == group.id),
+                            border = null
+                        )
+                    }
+                }
             }
 
             // Status filter + sort chips
@@ -329,6 +379,16 @@ fun ListScreen(
             }
         }
     }
+
+    // Batch move to group dialog
+    if (uiState.showMoveGroupDialog) {
+        MoveToGroupDialog(
+            groups = uiState.groups,
+            selectedCount = uiState.selectedIds.size,
+            onSelectGroup = { groupId -> viewModel.batchMoveToGroup(groupId) },
+            onDismiss = { viewModel.dismissMoveGroupDialog() }
+        )
+    }
 }
 
 @Composable
@@ -419,6 +479,34 @@ private fun VideoCard(
                         )
                     }
                 }
+                // Group name + episode number row
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (!record.groupDisplay.isNullOrBlank() && record.groupDisplay != "未分组") {
+                        Icon(
+                            Icons.Default.Folder,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = Blue400
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = record.groupDisplay,
+                            fontSize = 11.sp,
+                            color = Blue500,
+                            maxLines = 1
+                        )
+                    }
+                    if (record.episodeNumber != null) {
+                        if (record.groupDisplay != "未分组") {
+                            Text(" · ", fontSize = 11.sp, color = TextTertiary)
+                        }
+                        Text(
+                            text = record.episodeText,
+                            fontSize = 11.sp,
+                            color = TextSecondary
+                        )
+                    }
+                }
             }
 
             // Actions
@@ -471,3 +559,58 @@ private fun chipColors(selected: Boolean) = FilterChipDefaults.filterChipColors(
     containerColor = SurfaceWhite,
     labelColor = TextSecondary
 )
+
+// ====== 批量移动到合集弹窗 ======
+
+@Composable
+private fun MoveToGroupDialog(
+    groups: List<VideoGroup>,
+    selectedCount: Int,
+    onSelectGroup: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (groups.isEmpty()) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("移动到合集") },
+            text = { Text("暂无合集，请先在详情页创建") },
+            confirmButton = {
+                TextButton(onClick = onDismiss) { Text("确定") }
+            }
+        )
+        return
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("移动到合集（已选 $selectedCount 个）") },
+        text = {
+            Column {
+                groups.forEach { group ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelectGroup(group.id ?: return@clickable) }
+                            .padding(vertical = 8.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = group.name ?: "未命名",
+                            fontSize = 15.sp,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "${group.videoCount ?: 0} 个视频",
+                            fontSize = 12.sp,
+                            color = TextTertiary
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        }
+    )
+}
