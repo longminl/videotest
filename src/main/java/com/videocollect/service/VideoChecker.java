@@ -116,6 +116,10 @@ public class VideoChecker {
                         // Content-Type 非视频类型 → 嗅探内容是否为 m3u8
                         playable = sniffIsM3u8(videoUrl);
                     }
+                } else if (isVideoExtension(videoUrl)) {
+                    // HEAD 请求不被支持（502/405/403），改用 GET + 内容嗅探
+                    log.info("HEAD 返回 {}，尝试 GET 嗅探: {}", code, videoUrl);
+                    playable = sniffIsM3u8(videoUrl);
                 }
 
                 return new CheckResult(playable, (int) elapsed, code,
