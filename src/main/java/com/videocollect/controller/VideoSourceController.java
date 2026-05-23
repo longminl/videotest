@@ -69,6 +69,27 @@ public class VideoSourceController {
     }
 
     /**
+     * 导出所有视频源（JSON 数组）
+     */
+    @GetMapping("/export")
+    public ApiResult<List<VideoSource>> exportAll() {
+        return ApiResult.success(videoSourceService.findAll());
+    }
+
+    /**
+     * 导入视频源
+     * 接收 JSON 数组，逐条插入（自动分配新 ID）
+     */
+    @PostMapping("/import")
+    public ApiResult<?> importSources(@RequestBody List<VideoSource> sources) {
+        if (sources == null || sources.isEmpty()) {
+            return ApiResult.error("导入数据不能为空");
+        }
+        int count = videoSourceService.importSources(sources);
+        return ApiResult.success("成功导入 " + count + " 条视频源");
+    }
+
+    /**
      * 测试搜索
      */
     @PostMapping("/test-search")

@@ -7,6 +7,7 @@ import com.videocollect.model.VideoGroup;
 import com.videocollect.model.VideoRecord;
 import com.videocollect.model.VideoSource;
 import com.videocollect.service.VideoChecker.CheckResult;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,9 @@ public class EpisodeSearchService {
 
     @Autowired
     private PageFetcher pageFetcher;
+
+    @Autowired
+    private VideoParser videoParser;
 
     // ====== 全源搜索 ======
 
@@ -139,12 +143,21 @@ public class EpisodeSearchService {
 
                 videoRecordDao.insert(record);
 
-                // 如果 video_url 不是视频直链（是网页），走 CollectService 尝试解析真正的视频地址
+                // 如果 video_url 不是视频直链（是网页），尝试解析真正的视频地址
                 if (!isDirectVideoUrl(item.getUrl())) {
                     tryReparseVideoUrl(record);
+                    // tryReparseVideoUrl 可能更新了 video_url，重新检测新地址
+                    VideoRecord updated = videoRecordDao.findById(record.getId());
+                    if (updated != null && updated.getVideoUrl() != null
+                            && !updated.getVideoUrl().equals(item.getUrl())) {
+                        CheckResult reCheck = videoChecker.check(updated.getVideoUrl());
+                        int newStatus = reCheck.isPlayable() ? 1 : 2;
+                        videoRecordDao.updateStatus(record.getId(), newStatus, reCheck.getLatencyMs(), reCheck.getErrorMsg());
+                        status = newStatus;
+                    }
                 }
 
-                itemResult.put("status", "success");
+                itemResult.put("status", status == 1 ? "success" : "unplayable");
                 itemResult.put("id", record.getId());
                 success++;
                 detail.add(itemResult);
@@ -173,23 +186,30 @@ public class EpisodeSearchService {
     }
 
     /**
-     * 尝试重新解析视频地址（如果导入时 video_url 是网页而非直链）
+     * 尝试重新解析视频地址（用 Jsoup + VideoParser，与 CollectService.tryReparse 一致）
      */
     private void tryReparseVideoUrl(VideoRecord record) {
-        // 简单实现：用 PageFetcher 抓取 + 找扩展名
         try {
-            String body = pageFetcher.fetchRaw(record.getVideoUrl());
-            if (body != null) {
-                // 查找 .mp4/.m3u8 等视频链接
-                Pattern urlPattern = Pattern.compile(
-                        "(https?://[^\\s\"'<>]+(?:\\.(?:m3u8|mp4|ts|flv|webm))[^\\s\"'<>]*)",
-                        Pattern.CASE_INSENSITIVE);
-                Matcher m = urlPattern.matcher(body);
-                if (m.find()) {
-                    String videoUrl = m.group(1);
-                    videoRecordDao.updateVideoUrl(record.getId(), videoUrl);
-                    log.info("批量导入时解析到视频直链: {}", videoUrl);
+            String url = record.getVideoUrl();
+            Document doc = pageFetcher.fetch(url);
+            List<String> videoUrls = null;
+            if (doc != null) {
+                videoUrls = videoParser.parse(doc);
+            }
+            // 用移动端 UA 重试
+            if (videoUrls == null || videoUrls.isEmpty()) {
+                Document mobileDoc = pageFetcher.fetch(url,
+                        "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Mobile Safari/537.36");
+                if (mobileDoc != null) {
+                    videoUrls = videoParser.parse(mobileDoc);
                 }
+            }
+            if (videoUrls != null && !videoUrls.isEmpty()) {
+                String videoUrl = videoUrls.get(0);
+                videoRecordDao.updateVideoUrl(record.getId(), videoUrl);
+                log.info("批量导入时解析到视频直链: {}", videoUrl);
+            } else {
+                log.debug("批量导入时页面中未发现视频链接: {}", url);
             }
         } catch (Exception e) {
             log.debug("批量导入时视频地址解析失败: {}", e.getMessage());

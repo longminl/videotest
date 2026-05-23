@@ -80,6 +80,10 @@ public interface VideoRecordDao {
     int updateGroup(@Param("id") Long id,
                     @Param("groupId") Long groupId);
 
+    /** 批量更新视频所属合集 */
+    int batchUpdateGroup(@Param("ids") List<Long> ids,
+                         @Param("groupId") Long groupId);
+
     /** 更新视频集数 */
     int updateEpisodeNumber(@Param("id") Long id,
                             @Param("episodeNumber") Integer episodeNumber);

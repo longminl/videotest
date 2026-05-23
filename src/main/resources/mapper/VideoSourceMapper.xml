@@ -66,4 +66,16 @@
         DELETE FROM video_source WHERE id = #{id}
     </delete>
 
+    <insert id="insertBatch">
+        INSERT INTO video_source (name, home_url, search_url, search_data_path,
+            search_title_field, search_url_field, search_cover_field,
+            episode_pattern, episode_group, episode_selector, encoding, sort_order)
+        VALUES
+        <foreach collection="list" item="s" separator=",">
+            (#{s.name}, #{s.homeUrl}, #{s.searchUrl}, #{s.searchDataPath},
+             #{s.searchTitleField}, #{s.searchUrlField}, #{s.searchCoverField},
+             #{s.episodePattern}, #{s.episodeGroup}, #{s.episodeSelector}, #{s.encoding}, #{s.sortOrder})
+        </foreach>
+    </insert>
+
 </mapper>

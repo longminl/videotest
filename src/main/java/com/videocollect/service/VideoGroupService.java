@@ -39,6 +39,12 @@ public class VideoGroupService {
             videoGroupDao.update(group);
             return videoGroupDao.findById(group.getId());
         } else {
+            if (group.getSortOrder() == null) {
+                group.setSortOrder(0);
+            }
+            if (group.getTotalEpisodes() == null) {
+                group.setTotalEpisodes(0);
+            }
             videoGroupDao.insert(group);
             return group;
         }

@@ -26,8 +26,10 @@
     </sql>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO video_collection (title, source_url, video_url, status, latency_ms, page_title, remark)
-        VALUES (#{title}, #{sourceUrl}, #{videoUrl}, #{status}, #{latencyMs}, #{pageTitle}, #{remark})
+        INSERT INTO video_collection (title, source_url, video_url, status, latency_ms, page_title, remark,
+                                      group_id, episode_number)
+        VALUES (#{title}, #{sourceUrl}, #{videoUrl}, #{status}, #{latencyMs}, #{pageTitle}, #{remark},
+                #{groupId}, #{episodeNumber})
     </insert>
 
     <select id="findById" resultMap="baseMap">
@@ -152,6 +154,14 @@
 
     <update id="updateGroup">
         UPDATE video_collection SET group_id = #{groupId}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="batchUpdateGroup">
+        UPDATE video_collection SET group_id = #{groupId}, updated_at = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </update>
 
     <update id="updateEpisodeNumber">

@@ -10,8 +10,32 @@
     <link href="/lib/plyr-3.7.8/plyr.css" rel="stylesheet">
     <style>
         * { font-family: system-ui, -apple-system, sans-serif; }
+
+        /* 设计令牌 */
+        :root {
+            --c-primary: #2563eb;
+            --c-primary-light: #3b82f6;
+            --c-primary-dark: #1d4ed8;
+            --c-gradient: linear-gradient(135deg, #4f46e5, #3b82f6);
+            --c-ok: #10b981;
+            --c-err: #ef4444;
+            --c-mute: #94a3b8;
+            --c-warn: #ca8a04;
+            --t-title: 24px;
+            --t-sub: 15px;
+            --t-body: 14px;
+            --t-small: 13px;
+            --t-xs: 12px;
+            --s-1: 8px;
+            --s-2: 16px;
+            --s-3: 24px;
+            --s-4: 32px;
+            --s-5: 40px;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
         body {
-            background: #f0f5ff;
+            background: #f8fafc;
             color: #1e293b;
             min-height: 100vh;
         }
@@ -62,8 +86,8 @@
 
         /* 标题 */
         .detail-title {
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 24px;
+            font-weight: 800;
             color: #1e293b;
             margin-bottom: 20px;
             letter-spacing: -0.3px;
@@ -96,7 +120,7 @@
             border-radius: 14px;
             padding: 24px 28px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
         }
         .info-card-title {
             font-size: 14px;
@@ -143,12 +167,12 @@
             font-weight: 600;
         }
         .status-badge-lg .sd { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-        .sb-0 { background: rgba(148,163,184,0.12); color: #64748b; }
-        .sb-0 .sd { background: #64748b; }
-        .sb-1 { background: rgba(34,197,94,0.1); color: #16a34a; }
-        .sb-1 .sd { background: #16a34a; }
-        .sb-2 { background: rgba(239,68,68,0.1); color: #dc2626; }
-        .sb-2 .sd { background: #dc2626; }
+        .sb-0 { background: rgba(148,163,184,0.08); color: #94a3b8; }
+        .sb-0 .sd { background: #94a3b8; }
+        .sb-1 { background: rgba(16,185,129,0.15); color: #10b981; }
+        .sb-1 .sd { background: #10b981; }
+        .sb-2 { background: rgba(239,68,68,0.12); color: #ef4444; }
+        .sb-2 .sd { background: #ef4444; }
         .sb-3 { background: rgba(234,179,8,0.12); color: #ca8a04; }
         .sb-3 .sd { background: #ca8a04; }
 
@@ -281,6 +305,9 @@
             .info-card { padding: 18px 18px; border-radius: 12px; }
             .info-grid { gap: 12px 24px; }
             .btn-back { padding: 8px 14px; font-size: 13px; }
+            .info-card-title { font-size: 13px; }
+            .info-label { font-size: 11px; }
+            .info-value { font-size: 13px; }
         }
         @media (max-width: 640px) {
             .info-grid { grid-template-columns: 1fr; }
@@ -298,11 +325,11 @@
             .detail-title { font-size: 16px; }
             .info-card { padding: 14px 12px; }
             .info-grid { gap: 10px; }
-            .btn-back { padding: 6px 10px; font-size: 12px; border-radius: 8px; }
-            .btn-action-primary { padding: 9px 14px; font-size: 13px; }
+            .btn-back { padding: 8px 12px; font-size: 12px; border-radius: 8px; }
+            .btn-action-primary { padding: 10px 16px; font-size: 13px; }
             .remark-input { padding: 8px 10px !important; font-size: 13px !important; }
             .btn-save-remark { padding: 8px 12px; font-size: 12px; }
-            .status-badge-lg { font-size: 12px; padding: 4px 10px; }
+            .status-badge-lg { font-size: 12px; padding: 5px 12px; }
             .latency-value { font-size: 13px; }
         }
 
@@ -416,19 +443,19 @@
 
         <!-- 操作按钮 -->
         <div class="action-bar">
-            <button class="btn-action-primary btn-download" onclick="downloadVideo(${record.id})">
+            <button class="btn-action-primary btn-download" th:onclick="'downloadVideo(' + ${record.id} + ')'">
                 <i class="bi bi-download"></i>下载
             </button>
-            <button class="btn-action-primary btn-recheck" onclick="recheck(${record.id})">
+            <button class="btn-action-primary btn-recheck" th:onclick="'recheck(' + ${record.id} + ')'">
                 <i class="bi bi-arrow-repeat"></i>重新检测
             </button>
-            <button class="btn-action-primary" style="background:rgba(59,130,246,0.08);color:#3b82f6;" onclick="moveToGroup(${record.id})">
+            <button class="btn-action-primary" style="background:rgba(59,130,246,0.08);color:#3b82f6;" th:onclick="'moveToGroup(' + ${record.id} + ')'">
                 <i class="bi bi-folder"></i>合集
             </button>
-            <button class="btn-action-primary" style="background:rgba(234,179,8,0.1);color:#ca8a04;" onclick="checkNextEpisode(${record.id})">
+            <button class="btn-action-primary" style="background:rgba(234,179,8,0.1);color:#ca8a04;" th:onclick="'checkNextEpisode(' + ${record.id} + ')'">
                 <i class="bi bi-arrow-right-circle"></i>下集
             </button>
-            <button class="btn-action-primary btn-delete" onclick="deleteRecord(${record.id})">
+            <button class="btn-action-primary btn-delete" th:onclick="'deleteRecord(' + ${record.id} + ')'">
                 <i class="bi bi-trash3"></i>删除记录
             </button>
         </div>
@@ -439,11 +466,11 @@
 
 <script src="/lib/bootstrap-5.3.3/js/bootstrap.bundle.min.js"></script>
 <script src="/lib/plyr-3.7.8/plyr.js"></script>
-<script>
+<script th:inline="javascript">
     var isMobile = /Mobi|Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
     // Plyr + HLS 播放器初始化
     (function() {
-        var videoUrl = '[[${record.videoUrl}]]';
+        var videoUrl = [[${record.videoUrl}]];
         var video = document.getElementById('videoPlayer');
         if (!video || !videoUrl) return;
 
@@ -455,25 +482,20 @@
             resetOnEnd: true
         };
 
-        // Plyr CDN 加载失败时，原生 controls 已保留作为回退
         if (typeof Plyr === 'undefined') {
             console.warn('Plyr 加载失败，使用原生播放器');
             return;
         }
 
-        // 视频标题（用于缓存分目录）
-        var videoTitle = encodeURIComponent('[[${record.title}]]');
+        var videoTitle = encodeURIComponent([[${record.title}]]);
 
-        // 判断是否为 m3u8 流
-        if (videoUrl.indexOf('.m3u8') > 0) {
+        if (videoUrl && videoUrl.indexOf('.m3u8') > 0) {
             var proxyUrl = '/proxy/m3u8?url=' + encodeURIComponent(videoUrl) + '&title=' + videoTitle;
             if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-                // Chrome / Firefox → hls.js 解码后交给 Plyr
                 var hls = new Hls();
                 hls.loadSource(proxyUrl);
                 hls.attachMedia(video);
 
-                // 首次检测 hls 代理返回状态
                 var hlsReady = false;
                 hls.on(Hls.Events.MANIFEST_PARSED, function() {
                     hlsReady = true;
@@ -485,7 +507,6 @@
                 hls.on(Hls.Events.ERROR, function(event, data) {
                     if (data.fatal) {
                         console.error('HLS 播放失败:', data.type, data.details);
-                        // 显示错误提示
                         var errMsg = '视频流加载失败 (' + data.type + ')';
                         if (data.response) {
                             errMsg += ' HTTP ' + data.response.code;
@@ -494,7 +515,6 @@
                         hls.destroy();
                     }
                 });
-                // 超时回退：10 秒后 hls 仍未就绪，使用原生播放器
                 setTimeout(function() {
                     if (!hlsReady) {
                         console.warn('HLS 加载超时，使用原生播放器');
@@ -504,15 +524,13 @@
                     }
                 }, 10000);
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // Safari 原生 HLS
                 video.src = proxyUrl;
                 video.addEventListener('loadedmetadata', function() {
                     window.player = new Plyr(video, plyrOptions);
                     video.play();
                 }, { once: true });
             }
-        } else {
-            // mp4 / webm 等直链
+        } else if (videoUrl) {
             video.src = videoUrl;
             window.player = new Plyr(video, plyrOptions);
             video.play();
@@ -521,14 +539,14 @@
 
     // ===== 缓存状态（仅 m3u8 视频） =====
     (function() {
-        var videoUrl = '[[${record.videoUrl}]]';
+        var videoUrl = [[${record.videoUrl}]];
         if (!videoUrl || videoUrl.indexOf('.m3u8') < 0) return;
         document.getElementById('cacheStatusRow').style.display = '';
         if (isMobile) {
             document.getElementById('cacheStatusValue').innerHTML = '<span style="color:#94a3b8;font-size:13px;">手机端跳过</span>';
             return;
         }
-        var title = encodeURIComponent('[[${record.title}]]');
+        var title = encodeURIComponent([[${record.title}]]);
         updateCacheStatus(videoUrl, title);
         window._cacheTimer = setInterval(function() { updateCacheStatus(videoUrl, title); }, 3000);
     })();
@@ -553,7 +571,7 @@
     }
 
     function copyUrl() {
-        const url = '[[${record.videoUrl}]]';
+        const url = [[${record.videoUrl}]];
         const btn = document.getElementById('copyBtn');
         navigator.clipboard.writeText(url).then(() => {
             btn.classList.add('copied');
@@ -581,13 +599,13 @@
     }
 
     function recheck(id) {
-        // 如果是 m3u8 视频，先清除缓存以强制重新拉取
-        var videoUrl = '[[${record.videoUrl}]]';
-        var title = encodeURIComponent('[[${record.title}]]');
+        var videoUrl = [[${record.videoUrl}]];
+        var title = encodeURIComponent([[${record.title}]]);
         if (videoUrl && videoUrl.indexOf('.m3u8') > 0) {
             fetch('/api/cache/clear-m3u8?videoUrl=' + encodeURIComponent(videoUrl) + '&title=' + title);
         }
-        const btn = event.target;
+        var btn = event.target;
+        if (btn.tagName !== 'BUTTON') btn = btn.closest('button');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>检测中...';
         fetch('/api/check/' + id, {method:'PUT'})
@@ -613,9 +631,9 @@
 
     // ===== 合集信息 =====
     (function() {
-        var groupId = '[[${record.groupId}]]';
-        var episodeNumber = '[[${record.episodeNumber}]]';
-        if (groupId && groupId !== 'null' && groupId !== '') {
+        var groupId = [[${record.groupId}]];
+        var episodeNumber = [[${record.episodeNumber}]];
+        if (groupId) {
             fetch('/api/group/' + groupId)
                 .then(function(r) { return r.json(); })
                 .then(function(res) {
@@ -623,7 +641,7 @@
                         document.getElementById('groupInfoRow').style.display = '';
                         document.getElementById('groupInfoValue').textContent = res.data.name;
                         document.getElementById('episodeInfoRow').style.display = '';
-                        document.getElementById('episodeInfoValue').textContent = episodeNumber && episodeNumber !== 'null' ? '第' + episodeNumber + '集' : '-';
+                        document.getElementById('episodeInfoValue').textContent = episodeNumber ? '第' + episodeNumber + '集' : '-';
                     }
                 })
                 .catch(function() {});
@@ -631,7 +649,6 @@
     })();
 
     function moveToGroup(id) {
-        // 加载合集列表让用户选择
         fetch('/api/group/list')
             .then(function(r) { return r.json(); })
             .then(function(res) {
@@ -643,8 +660,8 @@
                 } else {
                     groups.forEach(function(g) {
                         html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;cursor:pointer;" ' +
-                            'onclick="doMoveToGroup(' + id + ',' + g.id + ',\'' + escapeHtml(g.name) + '\')">' +
-                            '<div><strong style="font-size:14px;">' + escapeHtml(g.name) + '</strong>' +
+                            'onclick="doMoveToGroup(' + id + ',' + g.id + ',\'' + (g.name||'').replace(/'/g,"\\'") + '\')">' +
+                            '<div><strong style="font-size:14px;">' + (g.name||'') + '</strong>' +
                             '<span style="font-size:12px;color:#94a3b8;margin-left:10px;">' + (g.videoCount||0) + ' 个视频</span></div>' +
                             '<span style="color:#3b82f6;font-size:13px;">移动 →</span>' +
                             '</div>';
@@ -702,18 +719,16 @@
                             showToast('第 ' + d.nextEpisodeNumber + ' 集已收录', 'success');
                         } else if (d.nextUrl) {
                             if (confirm('发现第 ' + d.nextEpisodeNumber + ' 集（' + d.nextUrl + '）\n是否导入？')) {
-                                // 快速导入
                                 var title = document.querySelector('.detail-title')?.textContent || '视频';
                                 var baseTitle = title.replace(/第\d+集.*$/, '').trim();
                                 if (!baseTitle) baseTitle = title;
-                                // 获取 groupId
-                                var groupId = '[[${record.groupId}]]';
-                                if (groupId && groupId !== 'null') {
+                                var groupId = [[${record.groupId}]];
+                                if (groupId) {
                                     fetch('/api/episode/import', {
                                         method: 'POST',
                                         headers: {'Content-Type': 'application/json'},
                                         body: JSON.stringify({
-                                            groupId: parseInt(groupId),
+                                            groupId: groupId,
                                             episodes: [{episodeNumber: d.nextEpisodeNumber, url: d.nextUrl}]
                                         })
                                     }).then(function(r) { return r.json(); }).then(function(r) {
@@ -738,22 +753,19 @@
     }
 
     function downloadVideo(id) {
-        var videoUrl = '[[${record.videoUrl}]]';
-        var title = '[[${record.title}]]';
+        var videoUrl = [[${record.videoUrl}]];
+        var title = [[${record.title}]];
         if (!videoUrl) { showToast('无视频地址', 'warning'); return; }
         showToast('正在下载...', 'info');
-        // 触发后端缓存（仅 m3u8）
         if (videoUrl.indexOf('.m3u8') > 0) {
             var controller = new AbortController();
             setTimeout(function() { controller.abort(); }, 5000);
             fetch('/api/cache/start?videoUrl=' + encodeURIComponent(videoUrl)
                 + '&title=' + encodeURIComponent(title) + '&id=' + id,
                 {method:'POST', signal: controller.signal}).catch(function(){});
-            // 打开代理 m3u8（浏览器触发下载）
             window.open('/proxy/m3u8?url=' + encodeURIComponent(videoUrl)
                 + '&title=' + encodeURIComponent(title));
         } else {
-            // mp4/ts 直链：新标签打开（浏览器直接播放/下载）
             window.open(videoUrl);
         }
     }

@@ -51,6 +51,24 @@ public class VideoSourceService {
     }
 
     public VideoSource save(VideoSource source) {
+        if (source.getSortOrder() == null) {
+            source.setSortOrder(0);
+        }
+        if (source.getEpisodeGroup() == null) {
+            source.setEpisodeGroup(1);
+        }
+        if (source.getSearchDataPath() == null) {
+            source.setSearchDataPath("$");
+        }
+        if (source.getSearchTitleField() == null) {
+            source.setSearchTitleField("title");
+        }
+        if (source.getSearchUrlField() == null) {
+            source.setSearchUrlField("url");
+        }
+        if (source.getEncoding() == null) {
+            source.setEncoding("UTF-8");
+        }
         if (source.getId() != null) {
             videoSourceDao.update(source);
             return videoSourceDao.findById(source.getId());
@@ -62,6 +80,25 @@ public class VideoSourceService {
 
     public void delete(Long id) {
         videoSourceDao.deleteById(id);
+    }
+
+    /**
+     * 批量导入视频源
+     * 清除 ID 和时间戳以使用数据库自增和默认时间
+     */
+    public int importSources(List<VideoSource> sources) {
+        for (VideoSource s : sources) {
+            s.setId(null);
+            s.setCreatedAt(null);
+            s.setUpdatedAt(null);
+            if (s.getSortOrder() == null) s.setSortOrder(0);
+            if (s.getEpisodeGroup() == null) s.setEpisodeGroup(1);
+            if (s.getSearchDataPath() == null) s.setSearchDataPath("$");
+            if (s.getSearchTitleField() == null) s.setSearchTitleField("title");
+            if (s.getSearchUrlField() == null) s.setSearchUrlField("url");
+            if (s.getEncoding() == null) s.setEncoding("UTF-8");
+        }
+        return videoSourceDao.insertBatch(sources);
     }
 
     // ====== 搜索测试 ======
@@ -83,11 +120,27 @@ public class VideoSourceService {
             return Collections.emptyList();
         }
 
-        try {
-            return parseSearchResults(source, response);
-        } catch (Exception e) {
-            log.warn("搜索结果解析失败: {}", e.getMessage());
-            return Collections.emptyList();
+        // 检测响应类型：JSON 还是 HTML
+        String trimmed = response.trim();
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            // JSON 格式
+            try {
+                return parseSearchResults(source, response);
+            } catch (Exception e) {
+                log.warn("JSON 搜索结果解析失败: {}", e.getMessage());
+                return Collections.emptyList();
+            }
+        } else if (trimmed.startsWith("<")) {
+            // HTML 格式 → 用 Jsoup 解析
+            log.info("搜索返回 HTML，尝试 HTML 解析");
+            return parseHtmlSearchResults(source, searchUrl, response);
+        } else {
+            log.warn("搜索结果格式未知，尝试 JSON 解析: {}", trimmed.substring(0, Math.min(50, trimmed.length())));
+            try {
+                return parseSearchResults(source, response);
+            } catch (Exception e) {
+                return Collections.emptyList();
+            }
         }
     }
 
@@ -111,6 +164,153 @@ public class VideoSourceService {
             fullUrl = fullUrl.replace("{keyword}", keyword);
         }
         return fullUrl;
+    }
+
+    /**
+     * 解析 HTML 格式的搜索结果
+     * 通用策略：先找容器，再全页扫描白名单模式，最后兜底去噪
+     */
+    private List<Map<String, String>> parseHtmlSearchResults(VideoSource source, String searchUrl, String html) {
+        List<Map<String, String>> results = new ArrayList<>();
+        Set<String> seenUrls = new HashSet<>();
+
+        try {
+            org.jsoup.nodes.Document doc = org.jsoup.Jsoup.parse(html, searchUrl);
+
+            // 策略1：查找常见搜索结果容器中的链接
+            String[] selectors = {
+                ".search-result a[href]", ".vod-list a[href]", ".module-list a[href]",
+                "ul.vodlist a[href]", "ul.video-list a[href]", ".stui-vodlist a[href]",
+                ".search-list a[href]", ".xing-vodlist a[href]", ".fed-vod-list a[href]"
+            };
+
+            for (String sel : selectors) {
+                org.jsoup.select.Elements links = doc.select(sel);
+                if (!links.isEmpty()) {
+                    for (org.jsoup.nodes.Element link : links) {
+                        addHtmlResult(source, results, seenUrls, link);
+                    }
+                    if (!results.isEmpty()) break;
+                }
+            }
+
+            // 策略2：全页扫描，按白名单 URL 模式匹配剧集详情页
+            if (results.isEmpty()) {
+                org.jsoup.select.Elements allLinks = doc.select("a[href]");
+                for (org.jsoup.nodes.Element link : allLinks) {
+                    String href = link.attr("href").trim();
+                    String text = link.text().trim();
+                    if (text.isEmpty() || text.length() < 2) continue;
+                    if (href.isEmpty() || href.startsWith("#") || href.startsWith("javascript")) continue;
+                    if (text.equals("首页") || text.equals("上一页") || text.equals("下一页")
+                        || text.contains("登录") || text.contains("注册") || text.contains("关于")) continue;
+                    // 剧集详情页常见 URL 模式
+                    if (href.matches(".*/lty/\\d+.*") || href.matches(".*/nlu/\\d+.*")
+                        || href.matches(".*/vod/\\d+.*") || href.matches(".*/detail/\\d+.*")
+                        || href.matches(".*/show/\\d+.*") || href.matches(".*/mip/\\d+.*")
+                        || href.matches(".*/play/\\d+.*") || href.matches(".*/content/\\w+.*")) {
+                        addHtmlResult(source, results, seenUrls, link);
+                    }
+                }
+            }
+
+            // 策略3：兜底——所有链接中去噪
+            if (results.isEmpty()) {
+                org.jsoup.select.Elements allLinks = doc.select("a[href]");
+                for (org.jsoup.nodes.Element link : allLinks) {
+                    String href = link.attr("href").trim();
+                    String text = link.text().trim();
+                    if (text.isEmpty() || text.length() < 2) continue;
+                    if (href.isEmpty() || href.startsWith("#") || href.startsWith("javascript")) continue;
+                    if (isNoiseLink(href, text)) continue;
+                    // 要求 URL 至少包含数字（区分详情页与普通页面）
+                    if (href.matches(".*\\d+.*") || text.length() >= 4) {
+                        addHtmlResult(source, results, seenUrls, link);
+                    }
+                }
+            }
+
+            log.info("HTML 搜索结果解析完成，共 {} 条", results.size());
+            return results;
+
+        } catch (Exception e) {
+            log.warn("HTML 搜索结果解析失败: {}", e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 判断是否为噪音链接（导航、地图、搜索翻页等）
+     */
+    private boolean isNoiseLink(String href, String text) {
+        // 排除 RSS/地图/标签/搜索翻页等
+        if (href.contains("/rss/") || href.contains("/label/") || href.contains("/search/")
+            || href.contains("/tag/") || href.contains("/page/") || href.contains("/sitemap")
+            || href.contains("/xml/") || href.contains(".xml") || href.contains("baidu")) {
+            return true;
+        }
+        // 排除噪音文本
+        String[] noiseTexts = {"网站地图", "百度地图", "360地图", "神马地图", "搜狗地图", "头条地图",
+            "热播榜", "首页", "上一页", "下一页", "登录", "注册", "关于我们", "友情链接",
+            "网站首页", "网站导航", "最近更新"};
+        for (String nt : noiseTexts) {
+            if (text.contains(nt)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 将 <a> 标签加入搜索结果（补全 URL、去重、去噪）
+     */
+    private void addHtmlResult(VideoSource source, List<Map<String, String>> results,
+                                Set<String> seenUrls, org.jsoup.nodes.Element link) {
+        String href = link.attr("href").trim();
+        String text = link.text().trim();
+        if (text.isEmpty() || href.isEmpty()) return;
+        if (isNoiseLink(href, text)) return;
+
+        // 补全相对路径
+        String fullUrl = resolveUrl(href, source.getHomeUrl());
+        if (fullUrl == null) return;
+
+        // 去重
+        String key = fullUrl;
+        if (seenUrls.contains(key)) return;
+        seenUrls.add(key);
+
+        Map<String, String> result = new LinkedHashMap<>();
+        result.put("title", text);
+        result.put("url", fullUrl);
+
+        // 查找同级别的 <img> 作为封面
+        org.jsoup.nodes.Element img = link.select("img[src]").first();
+        if (img == null && link.parent() != null) {
+            img = link.parent().select("img[src]").first();
+        }
+        if (img != null) {
+            String imgSrc = img.attr("src").trim();
+            if (!imgSrc.isEmpty() && !imgSrc.startsWith("data:")) {
+                result.put("cover", resolveUrl(imgSrc, source.getHomeUrl()));
+            }
+        }
+
+        results.add(result);
+    }
+
+    /**
+     * 补全相对 URL
+     */
+    private String resolveUrl(String href, String baseUrl) {
+        if (href == null || href.isEmpty()) return null;
+        if (href.startsWith("http://") || href.startsWith("https://")) return href;
+        if (href.startsWith("//")) return "https:" + href;
+        if (href.startsWith("/")) {
+            if (baseUrl == null || baseUrl.isEmpty()) return href;
+            String base = baseUrl;
+            if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
+            return base + href;
+        }
+        return href;
     }
 
     /**

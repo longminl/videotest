@@ -69,11 +69,20 @@
 <div class="app-container">
     <a href="/" class="btn-back"><i class="bi bi-arrow-left"></i>返回列表</a>
 
-    <div class="header-section d-flex justify-content-between align-items-center">
+    <div class="header-section d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="header-title"><i class="bi bi-gear"></i>视频源管理</div>
-        <button class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:8px 16px;" onclick="openCreate()">
-            <i class="bi bi-plus-lg"></i> 新增视频源
-        </button>
+        <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm" style="background:#ffffff;color:#3b82f6;border:1px solid #3b82f6;border-radius:8px;padding:8px 16px;" onclick="exportSources()" title="导出为 JSON 文件">
+                <i class="bi bi-download"></i> 导出
+            </button>
+            <button class="btn btn-sm" style="background:#ffffff;color:#16a34a;border:1px solid #16a34a;border-radius:8px;padding:8px 16px;" onclick="document.getElementById('importFileInput').click()" title="从 JSON 文件导入">
+                <i class="bi bi-upload"></i> 导入
+            </button>
+            <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importSources(event)">
+            <button class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:8px 16px;" onclick="openCreate()">
+                <i class="bi bi-plus-lg"></i> 新增
+            </button>
+        </div>
     </div>
 
     <div id="sourceList">
@@ -196,6 +205,33 @@
     </div>
 </div>
 
+<!-- 从搜索结果导入剧集确认弹窗 -->
+<div class="modal fade modal-custom" id="importFromSearchModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="bi bi-upload me-2"></i>导入剧集</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="importSearchSourceId">
+                <div class="mb-3">
+                    <label style="font-size:12px;color:#64748b;margin-bottom:2px;">剧集标题</label>
+                    <input type="text" id="importSearchTitle" class="form-control input-glass" placeholder="剧集名称">
+                </div>
+                <div class="mb-3">
+                    <label style="font-size:12px;color:#64748b;margin-bottom:2px;">剧集主页URL</label>
+                    <input type="text" id="importSearchUrl" class="form-control input-glass" readonly style="background:#f8fafc;font-size:12px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border:none;border-radius:8px;" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-sm" style="background:#3b82f6;color:#fff;border:none;border-radius:8px;" onclick="confirmImportFromSearch()">确认导入</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="toast-container" id="toastContainer"></div>
 <script>
     var editingSourceId = null;
@@ -278,7 +314,8 @@
             episodePattern: document.getElementById('f_epPattern').value.trim(),
             episodeGroup: parseInt(document.getElementById('f_epGroup').value) || 2,
             episodeSelector: document.getElementById('f_selector').value.trim() || null,
-            encoding: 'UTF-8'
+            encoding: 'UTF-8',
+            sortOrder: 0
         };
         if (!data.name) { showToast('请输入名称', 'warning'); return; }
         if (!data.homeUrl) { showToast('请输入首页地址', 'warning'); return; }
@@ -337,10 +374,13 @@
                     } else {
                         resultsDiv.innerHTML = '<p style="font-size:12px;color:#64748b;margin-bottom:8px;">共 ' + res.data.length + ' 条结果：</p>' +
                             res.data.map(function(item, idx) {
-                                return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #f1f5f9;">' +
-                                    '<span style="font-size:12px;color:#94a3b8;width:24px;">' + (idx+1) + '</span>' +
-                                    '<span style="font-size:14px;color:#1e293b;flex:1;">' + escapeHtml(item.title || '') + '</span>' +
-                                    '<span style="font-size:12px;color:#94a3b8;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(item.url || '') + '</span>' +
+                                var encUrl = encodeURIComponent(item.url || '');
+                                var encTitle = encodeURIComponent(item.title || '');
+                                return '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid #f1f5f9;">' +
+                                    '<span style="font-size:12px;color:#94a3b8;width:20px;">' + (idx+1) + '</span>' +
+                                    '<span style="font-size:14px;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(item.title || '') + '">' + escapeHtml(item.title || '') + '</span>' +
+                                    '<span style="font-size:12px;color:#94a3b8;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(item.url || '') + '</span>' +
+                                    '<button class="btn btn-sm" style="background:transparent;border:1px solid #3b82f6;border-radius:6px;color:#3b82f6;font-size:12px;padding:2px 10px;white-space:nowrap;" onclick="importSearchResult(' + testSourceId + ',\'' + encUrl + '\',\'' + encTitle + '\')">导入</button>' +
                                     '</div>';
                             }).join('');
                     }
@@ -426,6 +466,89 @@
         openTestParse(null);
         document.getElementById('testParseUrl').value = url;
         doTestParse();
+    }
+
+    // ===== 从搜索结果导入剧集 =====
+
+    function importSearchResult(sourceId, url, title) {
+        document.getElementById('importSearchSourceId').value = sourceId || '';
+        document.getElementById('importSearchTitle').value = decodeURIComponent(title || '');
+        document.getElementById('importSearchUrl').value = decodeURIComponent(url || '');
+        new bootstrap.Modal(document.getElementById('importFromSearchModal')).show();
+    }
+
+    function confirmImportFromSearch() {
+        var sid = document.getElementById('importSearchSourceId').value;
+        var title = document.getElementById('importSearchTitle').value.trim();
+        var url = document.getElementById('importSearchUrl').value.trim();
+        if (!title) { showToast('请输入剧集标题', 'warning'); return; }
+        if (!url) { showToast('URL 不能为空', 'warning'); return; }
+        bootstrap.Modal.getInstance(document.getElementById('importFromSearchModal')).hide();
+        bootstrap.Modal.getInstance(document.getElementById('testSearchModal')).hide();
+        // 跳转到首页并自动打开导入向导
+        window.location.href = '/?importSourceId=' + encodeURIComponent(sid) +
+            '&importUrl=' + encodeURIComponent(url) +
+            '&importTitle=' + encodeURIComponent(title);
+    }
+
+    // ===== 导出 / 导入 =====
+
+    function exportSources() {
+        fetch('/api/source/export')
+            .then(r => r.json())
+            .then(function(res) {
+                if (res.code !== 200 || !res.data) {
+                    showToast('导出失败: ' + (res.message || ''), 'danger');
+                    return;
+                }
+                var json = JSON.stringify(res.data, null, 2);
+                var blob = new Blob([json], {type: 'application/json'});
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'video-sources.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('导出成功，共 ' + res.data.length + ' 条', 'success');
+            })
+            .catch(function() { showToast('导出请求失败', 'danger'); });
+    }
+
+    function importSources(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                var sources = JSON.parse(e.target.result);
+                if (!Array.isArray(sources) || sources.length === 0) {
+                    showToast('文件格式错误：需要 JSON 数组', 'danger');
+                    return;
+                }
+                fetch('/api/source/import', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(sources)
+                })
+                .then(r => r.json())
+                .then(function(res) {
+                    if (res.code === 200) {
+                        showToast(res.message || '导入成功', 'success');
+                        loadSources();
+                    } else {
+                        showToast(res.message || '导入失败', 'danger');
+                    }
+                })
+                .catch(function() { showToast('导入请求失败', 'danger'); });
+            } catch (err) {
+                showToast('JSON 解析失败: ' + err.message, 'danger');
+            }
+        };
+        reader.readAsText(file);
+        // 重置 input 以便重复选择同一文件
+        event.target.value = '';
     }
 
     function showToast(message, type) {

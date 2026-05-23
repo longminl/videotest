@@ -56,6 +56,7 @@ public class SourceTemplateLoader implements CommandLineRunner {
             Object group = tmpl.get("episodeGroup");
             source.setEpisodeGroup(group != null ? Integer.valueOf(group.toString()) : 1);
             source.setEncoding("UTF-8");
+            source.setSortOrder(0);
 
             videoSourceDao.insert(source);
             loaded++;

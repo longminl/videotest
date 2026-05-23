@@ -26,4 +26,7 @@ public interface VideoSourceDao {
 
     /** 删除视频源 */
     int deleteById(@Param("id") Long id);
+
+    /** 批量插入（导入用） */
+    int insertBatch(@Param("list") List<VideoSource> sources);
 }

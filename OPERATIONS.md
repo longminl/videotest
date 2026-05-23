@@ -173,3 +173,40 @@ java -jar target/video-collect-1.0.0.jar
 启动后访问：
 - `http://localhost:8080/` — 列表页（全部功能已更新）
 - `http://localhost:8080/sources` — 视频源管理页
+
+---
+
+## 2026-05-23 更新：Bug 修复 + 批量移动到合集
+
+### 变更内容
+
+#### Bug 修复
+1. **合集创建失败** — `VideoGroupService.save()` 新建合集时未设 `sortOrder` 默认值，SQL NOT NULL 约束报错。修复：新建时自动设 `sortOrder=0`、`totalEpisodes=0`。
+2. **视频入库未关联合集** — `VideoRecordMapper.xml` 的 INSERT 语句缺少 `group_id` 和 `episode_number` 字段，虽然 `setGroupId()` 已调用但值被静默丢弃。修复：INSERT 追加这两列。
+3. **详情页所有点击事件无效** — `<script>` 缺少 `th:inline="javascript"`，`[[${record.videoUrl}]]` 在纯文本模式下输出，若视频URL含特殊字符会破坏整个脚本块语法。修复：改用 `<script th:inline="javascript">`，Thymeleaf 自动 JS 转义。
+4. **批量导入检测失败** — `tryReparseVideoUrl()` 用简单正则搜视频扩展名，无法识别 JS 变量嵌入的视频地址（如 `var player_xxx={"url":"..."}`）。而 `/api/check` 使用 `VideoParser.parse()` 可正确解析。修复：`tryReparseVideoUrl` 改用 `PageFetcher.fetch()` + `VideoParser.parse()`（与 `/api/check` 一致），找到视频直链后重新检测并更新 status。
+
+#### 新功能
+5. **批量移动到合集** — 列表页勾选视频后出现"移动到合集"按钮，点击弹窗选择目标合集，批量更新。
+   - 前端：`index.html` — 新增按钮 + 合集选择弹窗
+   - 后端：`PUT /api/group/batch-move-video`（`VideoGroupController.java`）
+   - DAO：`VideoRecordDao.batchUpdateGroup()` + Mapper SQL
+
+#### 其他
+6. **HTML 搜索过滤优化** — `VideoSourceService.parseHtmlSearchResults()` 增加 `/lty/\d+` 白名单模式 + `isNoiseLink()` 排除导航/地图/搜索翻页等噪音链接。
+7. **测试搜索结果可直接导入** — `sources.html` 每行结果加"导入"按钮 → 确认弹窗 → 自动跳转首页启动导入向导。
+8. **导入向导骨架屏修复** — `doBatchImport()` 无响应问题修复：`renderImportStep3()` 增加合集选择器，`goImportStep2()` 提前捕获合集选择。
+9. **模态框遮挡修复** — `openGroupEdit()` 打开编辑弹窗时先关闭合集列表弹窗，避免被遮挡。
+
+### 操作步骤
+
+无数据库变更，直接重启即可：
+
+```bash
+mvn clean package
+# 停止旧进程
+netstat -ano | findstr :8080
+taskkill /PID <PID> /F
+# 启动新版本
+java -jar target/video-collect-1.0.0.jar
+```

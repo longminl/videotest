@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 合集管理 REST API
@@ -121,6 +122,27 @@ public class VideoGroupController {
         if (group != null) groupName = group.getName();
 
         return ApiResult.success("已移动到: " + groupName);
+    }
+
+    /**
+     * 批量移动视频到合集
+     */
+    @PutMapping("/batch-move-video")
+    public ApiResult<?> batchMoveVideo(@RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<Integer> idInts = (List<Integer>) body.get("videoIds");
+        Long groupId = Long.valueOf(body.get("groupId").toString());
+        if (idInts == null || idInts.isEmpty() || groupId == null) {
+            return ApiResult.error("参数不完整");
+        }
+        List<Long> ids = idInts.stream().map(Integer::longValue).collect(Collectors.toList());
+        videoRecordDao.batchUpdateGroup(ids, groupId);
+
+        String groupName = "合集";
+        VideoGroup group = videoGroupService.findById(groupId);
+        if (group != null) groupName = group.getName();
+
+        return ApiResult.success("已将 " + ids.size() + " 个视频移动到: " + groupName);
     }
 
     /**
